@@ -53,7 +53,7 @@ export const movies: Movie[] = [
     id: '2',
     title: 'Dangal',
     slug: 'dangal',
-    thumbnail: 'https://image.tmdb.org/t/p/w500/7978S6_D_R_S_6_4_2.jpg', // Placeholder
+    thumbnail: 'https://image.tmdb.org/t/p/w500/jLiA1WW3kL1K9lYfYmVj57RD74N.jpg',
     rating: 8.3,
     description: 'Former wrestler Mahavir Singh Phogat and his two wrestler daughters struggle towards glory at the Commonwealth Games in the face of societal oppression.',
     releaseYear: 2016,
@@ -95,7 +95,7 @@ export const movies: Movie[] = [
     id: '5',
     title: 'Pushpa: The Rise',
     slug: 'pushpa-the-rise',
-    thumbnail: 'https://image.tmdb.org/t/p/w500/v9Qf16mYp06Xf9Vf1U7S3_Z_R_D.jpg', // Placeholder
+    thumbnail: 'https://image.tmdb.org/t/p/w500/oaRk2HgOirEeNuDCwwScmq7rKvS.jpg',
     rating: 7.6,
     description: 'Violence erupts between red sandal smugglers and the police in the Seshachalam forests of South India.',
     releaseYear: 2021,
@@ -109,7 +109,7 @@ export const movies: Movie[] = [
     id: '6',
     title: 'Lagaan',
     slug: 'lagaan',
-    thumbnail: 'https://image.tmdb.org/t/p/w500/A7M9fW2h9A6U_S_T_6_4_2.jpg', // Placeholder
+    thumbnail: 'https://image.tmdb.org/t/p/w500/yNX9lFRAFeNLNRIXdqZK9gYrYKa.jpg',
     rating: 8.1,
     description: 'In 1890s India, an arrogant British officer challenges the people of Champaner to a game of cricket in an attempt to avoid paying the taxes they owe.',
     releaseYear: 2001,
@@ -123,7 +123,7 @@ export const movies: Movie[] = [
     id: '7',
     title: 'Bahubali: The Beginning',
     slug: 'bahubali-the-beginning',
-    thumbnail: 'https://image.tmdb.org/t/p/w500/9FL_S_6_4_2.jpg', // Placeholder
+    thumbnail: 'https://image.tmdb.org/t/p/w500/9BAjt8nSSms62uOVYn1t3C3dVto.jpg',
     rating: 8.0,
     description: 'In ancient India, an adventurous and daring man becomes involved in a decades-old feud between two warring people.',
     releaseYear: 2015,
@@ -137,7 +137,7 @@ export const movies: Movie[] = [
     id: '8',
     title: '3 Idiots',
     slug: '3-idiots',
-    thumbnail: 'https://image.tmdb.org/t/p/w500/6vA_S_6_4_2.jpg', // Placeholder
+    thumbnail: 'https://image.tmdb.org/t/p/w500/66A9MqXOyVFCssoloscw79z8Tew.jpg',
     rating: 8.4,
     description: 'Two friends are searching for their long lost companion. They revisit their college days and recall the memories of their friend who inspired them to think differently, even as the rest of the world called them "idiots".',
     releaseYear: 2009,
@@ -151,7 +151,7 @@ export const movies: Movie[] = [
     id: '9',
     title: 'Spider-Man: Across the Spider-Verse',
     slug: 'spider-man-across-the-spider-verse',
-    thumbnail: 'https://image.tmdb.org/t/p/w500/8Vt6S_6_4_2.jpg', // Placeholder
+    thumbnail: 'https://image.tmdb.org/t/p/w500/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg',
     rating: 8.6,
     description: 'Miles Morales catapults across the Multiverse, where he encounters a team of Spider-People charged with protecting its very existence.',
     releaseYear: 2023,
@@ -165,7 +165,7 @@ export const movies: Movie[] = [
     id: '10',
     title: 'K.G.F: Chapter 1',
     slug: 'kgf-chapter-1',
-    thumbnail: 'https://image.tmdb.org/t/p/w500/b_S_6_4_2.jpg', // Placeholder
+    thumbnail: 'https://image.tmdb.org/t/p/w500/ltHlJwvxKv7d0ooCiKSAvfwV9tX.jpg',
     rating: 8.2,
     description: 'Rocky, a young man, seeks power and wealth in order to fulfill a promise to his dying mother. His quest takes him to Mumbai, where he becomes involved with the notorious gold mafia.',
     releaseYear: 2018,
