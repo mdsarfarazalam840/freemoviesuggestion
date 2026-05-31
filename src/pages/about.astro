@@ -1,0 +1,39 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="About Us">
+  <Navbar />
+  <main class="bg-canvas py-24 sm:py-32">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl">
+        <h1 class="text-5xl font-bold tracking-vercel text-ink mb-8">About Free Movie Suggestion<span class="text-link">.</span></h1>
+        <div class="space-y-6 text-lg text-body leading-relaxed">
+          <p>
+            Free Movie Suggestion was born out of a simple frustration: spending more time looking for a movie than actually watching it.
+          </p>
+          <p>
+            We believe that finding a great story should be as effortless as the entertainment itself. Our engine analyzes trends, ratings, and availability across all major OTT platforms to give you the perfect pick in seconds.
+          </p>
+          <p>
+            Whether you're in the mood for a Bollywood drama, a Hollywood blockbuster, or a Tollywood hit, we've got you covered.
+          </p>
+        </div>
+        
+        <div class="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="p-8 border border-hairline rounded-vercel-lg bg-canvas-soft">
+            <h3 class="text-lg font-bold text-ink mb-2">Our Mission</h3>
+            <p class="text-sm text-body">To solve streaming fragmentation and help people discover their next favorite story without the friction of searching multiple apps.</p>
+          </div>
+          <div class="p-8 border border-hairline rounded-vercel-lg bg-canvas-soft">
+            <h3 class="text-lg font-bold text-ink mb-2">How it Works</h3>
+            <p class="text-sm text-body">We index content from Netflix, Prime Video, Disney+, Hotstar, and more, providing a unified search and recommendation experience.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>

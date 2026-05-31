@@ -1,0 +1,46 @@
+---
+const navLinks = [
+  { href: '/movies', label: 'All Movies' },
+  { href: '/#regions', label: 'Regions' },
+  { href: '/#genres', label: 'Genres' },
+  { href: '/#ott', label: 'OTT Platforms' },
+];
+---
+
+<nav class="sticky top-0 z-50 w-full border-b border-hairline bg-canvas/80 backdrop-blur-md">
+  <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center gap-8">
+      <a href="/" class="flex items-center gap-2 group">
+        <div class="h-8 w-8 bg-ink flex items-center justify-center rounded-vercel-sm group-hover:bg-gradient-develop-start transition-colors">
+          <svg viewBox="0 0 24 24" class="h-5 w-5 fill-canvas" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z" />
+          </svg>
+        </div>
+        <span class="text-lg font-semibold tracking-tight text-ink">Free Movie Suggestion</span>
+      </a>
+      
+      <div class="hidden md:flex items-center gap-1">
+        {navLinks.map(link => (
+          <a 
+            href={link.href} 
+            class="px-3 py-2 text-sm font-medium text-body hover:text-ink hover:bg-canvas-soft-2 rounded-vercel-pill transition-all"
+          >
+            {link.label}
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <a 
+        href="/movies" 
+        class="hidden sm:inline-flex h-9 items-center justify-center rounded-vercel-pill bg-ink px-4 text-sm font-medium text-canvas hover:bg-ink/90 transition-colors"
+      >
+        Find Suggestion
+      </a>
+      <button class="md:hidden p-2 text-body hover:text-ink">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+</nav>

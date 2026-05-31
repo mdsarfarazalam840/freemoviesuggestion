@@ -1,0 +1,43 @@
+---
+interface Props {
+  title: string;
+  subtitle?: string;
+}
+
+const { title, subtitle } = Astro.props;
+---
+
+<section class="relative overflow-hidden bg-canvas py-24 sm:py-32">
+  <!-- Mesh Gradient Background -->
+  <div class="absolute inset-0 mesh-gradient opacity-10"></div>
+  <div class="absolute inset-0 bg-gradient-to-b from-transparent to-canvas"></div>
+
+  <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl">
+      <div class="mb-8 flex">
+        <span class="rounded-vercel-pill bg-link/10 px-3 py-1 text-xs font-mono font-medium text-link uppercase tracking-wider">
+          New suggestion engine live
+        </span>
+      </div>
+      <h1 class="text-5xl font-bold tracking-[-0.05em] text-ink sm:text-6xl lg:text-7xl leading-[1.1]">
+        {title}<span class="text-link">.</span>
+      </h1>
+      {subtitle && (
+        <p class="mt-6 text-xl leading-8 text-body max-w-2xl">
+          {subtitle}
+        </p>
+      )}
+      <div class="mt-10 flex items-center gap-x-6">
+        <a 
+          href="/movies" 
+          class="rounded-vercel-pill bg-ink px-8 py-3.5 text-base font-semibold text-canvas shadow-vercel-lg hover:bg-ink/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink transition-all"
+        >
+          Explore All Movies
+        </a>
+        <a href="#regions" class="text-sm font-semibold leading-6 text-ink flex items-center gap-1 group">
+          Browse by Region <span class="group-hover:translate-x-1 transition-transform" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

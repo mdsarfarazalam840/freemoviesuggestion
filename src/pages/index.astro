@@ -1,11 +1,157 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Hero from '../components/Hero.astro';
+import MovieCard from '../components/MovieCard.astro';
+import Footer from '../components/Footer.astro';
+import { movies, REGIONS, GENRES, OTT_PLATFORMS } from '../data/movies';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const top10 = movies.filter(m => m.isTop10).sort((a, b) => (a.rank || 0) - (b.rank || 0));
+const bollywood = movies.filter(m => m.region === 'Bollywood').slice(0, 4);
+const hollywood = movies.filter(m => m.region === 'Hollywood').slice(0, 4);
+const tollywood = movies.filter(m => m.region === 'Tollywood').slice(0, 4);
 ---
 
-<Layout>
-	<Welcome />
+<Layout title="Home">
+	<Navbar />
+	<main>
+		<Hero 
+			title="Find your next favorite movie" 
+			subtitle="The ultimate suggestion engine for Bollywood, Hollywood, and Tollywood. Filter by genre, OTT platforms, and more."
+		/>
+
+		<!-- Top 10 Section -->
+		<section class="py-20 bg-canvas">
+			<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+				<div class="mb-12 flex items-end justify-between">
+					<div>
+						<h2 class="text-3xl font-bold tracking-tight text-ink">Top 10 Picks Today</h2>
+						<p class="mt-2 text-body">The most suggested movies across all platforms.</p>
+					</div>
+					<a href="/movies" class="text-sm font-semibold text-link hover:underline">View all</a>
+				</div>
+
+				<div class="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+					{top10.map((movie) => (
+						<MovieCard movie={movie} rank={movie.rank} />
+					))}
+				</div>
+			</div>
+		</section>
+
+		<!-- Regions Section -->
+		<section id="regions" class="py-20 bg-canvas-soft border-t border-hairline">
+			<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+				<div class="space-y-24">
+					<!-- Bollywood -->
+					<div>
+						<div class="mb-10 flex items-center justify-between">
+							<div class="flex items-center gap-3">
+								<div class="h-10 w-1 flex bg-gradient-ship-start rounded-full"></div>
+								<h2 class="text-2xl font-bold tracking-tight text-ink">Bollywood Excellence</h2>
+							</div>
+							<a href="/region/bollywood" class="text-sm font-semibold text-body hover:text-ink">Browse Bollywood →</a>
+						</div>
+						<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+							{bollywood.map(movie => <MovieCard movie={movie} />)}
+						</div>
+					</div>
+
+					<!-- Hollywood -->
+					<div>
+						<div class="mb-10 flex items-center justify-between">
+							<div class="flex items-center gap-3">
+								<div class="h-10 w-1 flex bg-gradient-develop-start rounded-full"></div>
+								<h2 class="text-2xl font-bold tracking-tight text-ink">Hollywood Blockbusters</h2>
+							</div>
+							<a href="/region/hollywood" class="text-sm font-semibold text-body hover:text-ink">Browse Hollywood →</a>
+						</div>
+						<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+							{hollywood.map(movie => <MovieCard movie={movie} />)}
+						</div>
+					</div>
+
+					<!-- Tollywood -->
+					<div>
+						<div class="mb-10 flex items-center justify-between">
+							<div class="flex items-center gap-3">
+								<div class="h-10 w-1 flex bg-gradient-preview-start rounded-full"></div>
+								<h2 class="text-2xl font-bold tracking-tight text-ink">Tollywood Hits</h2>
+							</div>
+							<a href="/region/tollywood" class="text-sm font-semibold text-body hover:text-ink">Browse Tollywood →</a>
+						</div>
+						<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+							{tollywood.map(movie => <MovieCard movie={movie} />)}
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Genres Section -->
+		<section id="genres" class="py-20 bg-canvas border-t border-hairline">
+			<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+				<div class="mb-12">
+					<h2 class="text-3xl font-bold tracking-tight text-ink">Popular Genres</h2>
+					<p class="mt-2 text-body">Find movies in your favorite categories.</p>
+				</div>
+				<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+					{GENRES.map(genre => (
+						<a 
+							href={`/genre/${genre.toLowerCase()}`}
+							class="flex flex-col items-center justify-center p-6 bg-canvas border border-hairline rounded-vercel-lg hover:border-hairline-strong hover:shadow-vercel transition-all group"
+						>
+							<span class="text-sm font-semibold text-ink group-hover:text-link">{genre}</span>
+						</a>
+					))}
+				</div>
+			</div>
+		</section>
+
+		<!-- OTT Platforms Section -->
+		<section id="ott" class="py-20 bg-canvas-soft border-t border-hairline">
+			<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+				<div class="mb-12">
+					<h2 class="text-3xl font-bold tracking-tight text-ink">Streaming Platforms</h2>
+					<p class="mt-2 text-body">Watch these movies on your preferred platforms.</p>
+				</div>
+				<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6">
+					{OTT_PLATFORMS.map(ott => (
+						<a 
+							href={`/ott/${ott.name.toLowerCase().replace('+', 'plus').replace(' ', '-')}`}
+							class="flex flex-col items-center justify-center p-6 bg-canvas border border-hairline rounded-vercel-lg hover:border-hairline-strong hover:shadow-vercel transition-all group"
+						>
+							<span class="text-sm font-semibold text-ink group-hover:text-link">{ott.name}</span>
+						</a>
+					))}
+				</div>
+			</div>
+		</section>
+
+		<!-- Call to Action -->
+		<section class="relative isolate overflow-hidden bg-ink py-24 sm:py-32">
+			<div class="mx-auto max-w-7xl px-6 lg:px-8">
+				<div class="mx-auto max-w-2xl text-center">
+					<h2 class="text-3xl font-bold tracking-tight text-canvas sm:text-4xl">Ready to find your next watch?</h2>
+					<p class="mx-auto mt-6 max-w-xl text-lg leading-8 text-canvas-soft-2/80">
+						Browse our full catalog of movies across all genres and streaming platforms.
+					</p>
+					<div class="mt-10 flex items-center justify-center gap-x-6">
+						<a 
+							href="/movies" 
+							class="rounded-vercel-pill bg-canvas px-8 py-3.5 text-sm font-semibold text-ink shadow-sm hover:bg-canvas-soft transition-all"
+						>
+							Start Browsing
+						</a>
+						<a href="/about" class="text-sm font-semibold leading-6 text-canvas">Learn more <span aria-hidden="true">→</span></a>
+					</div>
+				</div>
+			</div>
+			<!-- Atmospheric effect -->
+			<div class="absolute -top-24 right-0 -z-10 transform-gpu blur-3xl" aria-hidden="true">
+				<div class="aspect-[1404/767] w-[87.75rem] bg-gradient-to-r from-gradient-develop-start to-gradient-preview-end opacity-20" style="clip-path: polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)"></div>
+			</div>
+		</section>
+	</main>
+	<Footer />
 </Layout>

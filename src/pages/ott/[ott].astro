@@ -1,0 +1,43 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import MovieCard from '../../components/MovieCard.astro';
+import Footer from '../../components/Footer.astro';
+import { movies, OTT_PLATFORMS } from '../../data/movies';
+
+export function getStaticPaths() {
+  return OTT_PLATFORMS.map(ott => ({
+    params: { ott: ott.name.toLowerCase().replace('+', 'plus').replace(' ', '-') },
+    props: { ott: ott.name },
+  }));
+}
+
+const { ott } = Astro.props;
+const filteredMovies = movies.filter(m => m.ottPlatforms.some(p => p.name.toLowerCase() === ott.toLowerCase()));
+---
+
+<Layout title={`Movies on ${ott}`} description={`Find the best movies available to watch on ${ott}.`}>
+  <Navbar />
+  <main class="min-h-screen bg-canvas-soft py-16">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="mb-12">
+        <nav class="flex mb-4" aria-label="Breadcrumb">
+          <ol class="flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-mute">
+            <li><a href="/" class="hover:text-ink">Home</a></li>
+            <li><span class="mx-2">/</span></li>
+            <li class="text-ink">OTT Platform</li>
+          </ol>
+        </nav>
+        <h1 class="text-4xl font-bold tracking-tight text-ink">Best on {ott}<span class="text-link">.</span></h1>
+        <p class="mt-4 text-lg text-body max-w-2xl">
+          Everything you can stream on {ott} today, handpicked by our recommendation engine.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        {filteredMovies.map(movie => <MovieCard movie={movie} />)}
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>

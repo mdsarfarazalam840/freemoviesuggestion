@@ -1,0 +1,139 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { movies } from '../../data/movies';
+
+export function getStaticPaths() {
+  return movies.map(movie => ({
+    params: { slug: movie.slug },
+    props: { movie },
+  }));
+}
+
+const { movie } = Astro.props;
+---
+
+<Layout title={movie.title} description={movie.description}>
+  <Navbar />
+  <main class="bg-canvas min-h-screen">
+    <!-- Hero Banner -->
+    <div class="relative h-[50vh] min-h-[400px] w-full overflow-hidden">
+      <img 
+        src={movie.thumbnail} 
+        alt={movie.title}
+        class="absolute inset-0 h-full w-full object-cover blur-2xl opacity-30 scale-110"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/60 to-transparent"></div>
+      
+      <div class="relative mx-auto max-w-7xl px-4 h-full flex items-end pb-12 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row gap-8 items-end w-full">
+          <div class="w-48 sm:w-64 flex-shrink-0 shadow-vercel-lg rounded-vercel-md overflow-hidden border border-hairline bg-canvas">
+             <img 
+              src={movie.thumbnail} 
+              alt={movie.title}
+              class="w-full aspect-[2/3] object-cover"
+            />
+          </div>
+          <div class="flex-1 pb-4">
+            <div class="flex items-center gap-2 mb-4">
+               <span class="rounded-vercel-pill bg-link/10 px-3 py-1 text-xs font-mono font-medium text-link uppercase">
+                {movie.region}
+              </span>
+              <span class="text-sm font-medium text-mute">{movie.releaseYear}</span>
+            </div>
+            <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-ink mb-4">{movie.title}</h1>
+            <div class="flex items-center gap-6">
+              <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="text-warning"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span class="text-lg font-bold text-ink">{movie.rating} / 10</span>
+              </div>
+              <div class="flex gap-2">
+                {movie.genres.map(genre => (
+                  <a 
+                    href={`/genre/${genre.toLowerCase()}`} 
+                    class="text-sm text-body px-2 py-1 bg-canvas-soft rounded-vercel-sm border border-hairline hover:border-link hover:text-link transition-colors"
+                  >
+                    {genre}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <section class="py-16">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-16">
+          <div class="lg:col-span-2">
+            <h2 class="text-2xl font-bold text-ink mb-6">Synopsis</h2>
+            <p class="text-lg text-body leading-relaxed mb-12">
+              {movie.description}
+            </p>
+
+            <h2 class="text-2xl font-bold text-ink mb-6">Where to Watch</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {movie.ottPlatforms.map(platform => (
+                <div class="flex flex-col gap-2">
+                  <a 
+                    href={platform.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="flex items-center justify-between p-4 rounded-vercel-lg border border-hairline bg-canvas-soft hover:bg-canvas transition-all group"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div class="h-10 w-10 rounded-vercel-sm bg-canvas border border-hairline flex items-center justify-center p-2">
+                        <img src={platform.logo} alt={platform.name} class="max-h-full max-w-full" />
+                      </div>
+                      <span class="font-semibold text-ink">Watch on {platform.name}</span>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-mute group-hover:text-link group-hover:translate-x-1 transition-all"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+                  </a>
+                  <a 
+                    href={`/ott/${platform.name.toLowerCase().replace('+', 'plus').replace(' ', '-')}`}
+                    class="text-xs text-mute hover:text-link transition-colors px-1"
+                  >
+                    View more movies on {platform.name} →
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <aside class="space-y-12">
+            <div class="rounded-vercel-lg border border-hairline p-8 bg-canvas-soft-2">
+              <h3 class="text-lg font-bold text-ink mb-4">Movie Info</h3>
+              <dl class="space-y-4">
+                <div>
+                  <dt class="text-xs font-mono uppercase tracking-wider text-mute">Release Year</dt>
+                  <dd class="text-sm font-medium text-ink">{movie.releaseYear}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-mono uppercase tracking-wider text-mute">Region</dt>
+                  <dd class="text-sm font-medium text-ink">{movie.region}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-mono uppercase tracking-wider text-mute">Genres</dt>
+                  <dd class="text-sm font-medium text-ink">{movie.genres.join(', ')}</dd>
+                </div>
+              </dl>
+            </div>
+            
+            <div class="text-center p-8 border border-link/20 rounded-vercel-lg bg-link/5">
+              <p class="text-sm text-ink mb-4 italic">"One of the best movies suggested by our community today!"</p>
+              <div class="flex justify-center -space-x-2">
+                {[1,2,3,4].map(i => (
+                  <div class={`h-8 w-8 rounded-full border-2 border-canvas bg-canvas-soft-2 flex items-center justify-center text-[10px] font-bold text-mute`}>U{i}</div>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>

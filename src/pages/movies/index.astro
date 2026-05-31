@@ -1,0 +1,196 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import MovieCard from '../../components/MovieCard.astro';
+import Footer from '../../components/Footer.astro';
+import { movies, GENRES, OTT_PLATFORMS } from '../../data/movies';
+
+// Get filters from URL
+const selectedGenre = Astro.url.searchParams.get('genre');
+const selectedOtt = Astro.url.searchParams.get('ott');
+
+// Filter movies case-insensitively
+let filteredMovies = movies;
+
+if (selectedGenre) {
+  filteredMovies = filteredMovies.filter(m => 
+    m.genres.some(g => g.toLowerCase() === selectedGenre.toLowerCase())
+  );
+}
+
+if (selectedOtt) {
+  filteredMovies = filteredMovies.filter(m => 
+    m.ottPlatforms.some(ott => ott.name.toLowerCase() === selectedOtt.toLowerCase())
+  );
+}
+---
+
+<Layout title="All Movies">
+  <Navbar />
+  <main class="min-h-screen bg-canvas-soft">
+    <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row gap-12">
+        <!-- Sidebar Filters -->
+        <aside class="w-full md:w-64 space-y-10">
+          <div>
+            <h3 class="text-xs font-mono font-medium uppercase tracking-widest text-mute mb-4">Genres</h3>
+            <div class="flex flex-wrap md:flex-col gap-2">
+              <a 
+                href={`/movies${selectedOtt ? `?ott=${encodeURIComponent(selectedOtt)}` : ''}`} 
+                class={`px-3 py-1.5 text-sm rounded-vercel-pill border transition-all ${!selectedGenre ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+              >
+                All Genres
+              </a>
+              {GENRES.map(genre => (
+                <a 
+                  href={`/movies?genre=${encodeURIComponent(genre)}${selectedOtt ? `&ott=${encodeURIComponent(selectedOtt)}` : ''}`} 
+                  class={`px-3 py-1.5 text-sm rounded-vercel-pill border transition-all ${selectedGenre?.toLowerCase() === genre.toLowerCase() ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+                >
+                  {genre}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xs font-mono font-medium uppercase tracking-widest text-mute mb-4">OTT Platforms</h3>
+            <div class="flex flex-wrap md:flex-col gap-2">
+              <a 
+                href={`/movies${selectedGenre ? `?genre=${encodeURIComponent(selectedGenre)}` : ''}`} 
+                class={`px-3 py-1.5 text-sm rounded-vercel-pill border transition-all ${!selectedOtt ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+              >
+                All Platforms
+              </a>
+              {OTT_PLATFORMS.map(ott => (
+                <a 
+                  href={`/movies?ott=${encodeURIComponent(ott.name)}${selectedGenre ? `&genre=${encodeURIComponent(selectedGenre)}` : ''}`} 
+                  class={`px-3 py-1.5 text-sm rounded-vercel-pill border transition-all ${selectedOtt?.toLowerCase() === ott.name.toLowerCase() ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+                >
+                  {ott.name}
+                </a>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        <!-- Movie Grid -->
+        <div class="flex-1">
+          <div class="mb-8 flex items-center justify-between">
+            <h1 class="text-2xl font-bold tracking-tight text-ink">
+              <span id="filter-title">
+                { (selectedGenre && selectedOtt) 
+                  ? `${selectedGenre} Movies on ${selectedOtt}` 
+                  : (selectedGenre ? `${selectedGenre} Movies` : (selectedOtt ? `Movies on ${selectedOtt}` : 'All Movies')) 
+                }
+              </span>
+              <span class="ml-2 text-sm font-normal text-mute">(<span id="results-count">{filteredMovies.length}</span> results)</span>
+            </h1>
+            
+            { (selectedGenre || selectedOtt) && (
+              <a href="/movies" class="text-sm font-medium text-link hover:underline">Clear all filters</a>
+            )}
+          </div>
+
+          <div id="movie-grid" class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+            {movies.map(movie => <MovieCard movie={movie} />)}
+          </div>
+
+          <div id="no-results" class="hidden py-24 text-center">
+            <p class="text-lg text-body">No movies found matching your filters.</p>
+            <a href="/movies" class="mt-4 inline-block text-link font-medium hover:underline">Reset filters</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  function updateFilters() {
+    const url = new URL(window.location.href);
+    const genre = url.searchParams.get('genre')?.toLowerCase();
+    const ott = url.searchParams.get('ott')?.toLowerCase();
+    
+    const movieCards = document.querySelectorAll('.movie-card');
+    const noResults = document.getElementById('no-results');
+    const movieGrid = document.getElementById('movie-grid');
+    const resultsCount = document.getElementById('results-count');
+    const filterTitle = document.getElementById('filter-title');
+    
+    let visibleCount = 0;
+    
+    movieCards.forEach((card: any) => {
+      const cardGenres = card.dataset.genres.split(',');
+      const cardOtts = card.dataset.ott.split(',');
+      
+      const genreMatch = !genre || cardGenres.includes(genre);
+      const ottMatch = !ott || cardOtts.includes(ott);
+      
+      if (genreMatch && ottMatch) {
+        card.style.display = 'flex';
+        visibleCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+    
+    if (resultsCount) resultsCount.textContent = visibleCount.toString();
+    
+    if (visibleCount === 0) {
+      noResults?.classList.remove('hidden');
+      movieGrid?.classList.add('hidden');
+    } else {
+      noResults?.classList.add('hidden');
+      movieGrid?.classList.remove('hidden');
+    }
+
+    // Update title based on active filters
+    if (filterTitle) {
+      const activeGenre = url.searchParams.get('genre');
+      const activeOtt = url.searchParams.get('ott');
+      
+      if (activeGenre && activeOtt) {
+        filterTitle.textContent = `${activeGenre} Movies on ${activeOtt}`;
+      } else if (activeGenre) {
+        filterTitle.textContent = `${activeGenre} Movies`;
+      } else if (activeOtt) {
+        filterTitle.textContent = `Movies on ${activeOtt}`;
+      } else {
+        filterTitle.textContent = 'All Movies';
+      }
+    }
+
+    // Update active states of filter links (optional but recommended)
+    const filterLinks = document.querySelectorAll('aside a');
+    filterLinks.forEach((link: any) => {
+      const linkUrl = new URL(link.href, window.location.origin);
+      const linkGenre = linkUrl.searchParams.get('genre')?.toLowerCase();
+      const linkOtt = linkUrl.searchParams.get('ott')?.toLowerCase();
+      
+      const isAllGenres = link.textContent.trim() === 'All Genres';
+      const isAllPlatforms = link.textContent.trim() === 'All Platforms';
+      
+      let isActive = false;
+      if (isAllGenres) isActive = !genre;
+      else if (isAllPlatforms) isActive = !ott;
+      else if (linkGenre) isActive = linkGenre === genre;
+      else if (linkOtt) isActive = linkOtt === ott;
+      
+      if (isActive) {
+        link.classList.add('bg-ink', 'text-canvas', 'border-ink');
+        link.classList.remove('bg-canvas', 'text-body', 'border-hairline');
+      } else {
+        link.classList.remove('bg-ink', 'text-canvas', 'border-ink');
+        link.classList.add('bg-canvas', 'text-body', 'border-hairline');
+      }
+    });
+  }
+
+  // Initial update
+  updateFilters();
+
+  // Listen for navigation (if using view transitions or popstate)
+  window.addEventListener('popstate', updateFilters);
+  document.addEventListener('astro:after-swap', updateFilters);
+</script>
