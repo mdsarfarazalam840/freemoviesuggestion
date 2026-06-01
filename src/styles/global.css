@@ -63,3 +63,26 @@
     radial-gradient(at 100% 0%, var(--color-gradient-ship-start) 0, transparent 50%);
   background-size: 100% 100%;
 }
+
+@layer components {
+  .brand-logo-icon {
+    color: var(--color-canvas);
+    transition:
+      color 180ms ease,
+      background-color 180ms ease,
+      transform 180ms ease;
+  }
+
+  .brand-logo-icon svg {
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .group:hover .brand-logo-icon {
+    color: var(--color-link);
+    background-color: #111111;
+    transform: translateY(-1px);
+  }
+}
