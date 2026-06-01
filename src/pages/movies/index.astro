@@ -11,19 +11,20 @@ const movies = await getAllMovies();
 // Get filters from URL
 const selectedGenre = Astro.url.searchParams.get('genre');
 const selectedOtt = Astro.url.searchParams.get('ott');
+const normalizeFilterSlug = (value = '') => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 // Filter movies case-insensitively
 let filteredMovies = movies;
 
 if (selectedGenre) {
   filteredMovies = filteredMovies.filter(m => 
-    m.genres.some(g => g.toLowerCase() === selectedGenre.toLowerCase())
+    (m.genres || []).some(g => normalizeFilterSlug(g) === normalizeFilterSlug(selectedGenre))
   );
 }
 
 if (selectedOtt) {
   filteredMovies = filteredMovies.filter(m => 
-    m.ottPlatforms.some(ott => ott.name.toLowerCase() === selectedOtt.toLowerCase())
+    (m.ottPlatforms || []).some(ott => normalizeFilterSlug(ott.name) === normalizeFilterSlug(selectedOtt))
   );
 }
 ---

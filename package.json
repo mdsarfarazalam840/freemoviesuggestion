@@ -9,6 +9,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "sync": "node --use-system-ca --import tsx scripts/run-sync.ts",
     "astro": "astro"
   },
   "dependencies": {

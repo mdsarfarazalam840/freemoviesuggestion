@@ -8,11 +8,15 @@ import { getAllMovies } from '../../services/movieService';
 export const prerender = false
 
 const { genre } = Astro.params;
+const currentGenre = genre || '';
 const movies = await getAllMovies();
-const filteredMovies = movies.filter(m => m.genres.some(g => g.toLowerCase() === genre?.toLowerCase()));
+const normalizeGenreSlug = (value = '') => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const filteredMovies = movies.filter(m => 
+  (m.genres || []).some(g => normalizeGenreSlug(g) === normalizeGenreSlug(currentGenre))
+);
 ---
 
-<Layout title={`${genre} Movies`} description={`Find the best ${genre} movies suggested by our community.`}>
+<Layout title={`${currentGenre} Movies`} description={`Find the best ${currentGenre} movies suggested by our community.`}>
   <Navbar />
   <main class="min-h-screen bg-canvas-soft py-16">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -26,9 +30,9 @@ const filteredMovies = movies.filter(m => m.genres.some(g => g.toLowerCase() ===
             <li class="text-ink">Genre</li>
           </ol>
         </nav>
-        <h1 class="text-4xl font-bold tracking-tight text-ink">{genre} Movies<span class="text-link">.</span></h1>
+        <h1 class="text-4xl font-bold tracking-tight text-ink">{currentGenre} Movies<span class="text-link">.</span></h1>
         <p class="mt-4 text-lg text-body max-w-2xl">
-          Explore our collection of {genre.toLowerCase()} movies available on various streaming platforms.
+          Explore our collection of {currentGenre.toLowerCase()} movies available on various streaming platforms.
         </p>
       </div>
 
@@ -38,7 +42,7 @@ const filteredMovies = movies.filter(m => m.genres.some(g => g.toLowerCase() ===
         </div>
       ) : (
         <div class="py-24 text-center bg-canvas rounded-vercel-lg border border-hairline shadow-vercel">
-          <p class="text-lg text-body">No movies found in the {genre} genre yet.</p>
+          <p class="text-lg text-body">No movies found in the {currentGenre} genre yet.</p>
           <a href="/movies" class="mt-4 inline-block text-link font-medium hover:underline">Explore all movies</a>
         </div>
       )}

@@ -9,9 +9,10 @@ export const prerender = false;
 
 const { ott } = Astro.params;
 const movies = await getAllMovies();
+const normalizeOttSlug = (value = '') => value.toLowerCase().trim().replace(/\+/g, 'plus').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 const filteredMovies = movies.filter(m => 
   (m.ottPlatforms || []).some(p => 
-    p.name.toLowerCase().replace('+', 'plus').replace(' ', '-') === ott?.toLowerCase()
+    normalizeOttSlug(p.name) === normalizeOttSlug(ott)
   )
 );
 ---

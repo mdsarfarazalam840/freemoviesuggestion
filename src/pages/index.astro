@@ -5,7 +5,7 @@ import Hero from '../components/Hero.astro';
 import MovieCard from '../components/MovieCard.astro';
 import Footer from '../components/Footer.astro';
 import { getTrendingMovies, getBollywoodMovies, getTollywoodMovies } from '../services/movieService';
-import { REGIONS, GENRES, OTT_PLATFORMS } from '../data/movies';
+import { GENRES, OTT_PLATFORMS } from '../data/movies';
 
 const movies = await getTrendingMovies();
 
