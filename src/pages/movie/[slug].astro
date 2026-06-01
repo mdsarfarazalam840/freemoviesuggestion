@@ -2,16 +2,17 @@
 import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import Footer from '../../components/Footer.astro';
-import { movies } from '../../data/movies';
+import { getAllMovies } from '../../services/movieService';
 
-export function getStaticPaths() {
-  return movies.map(movie => ({
-    params: { slug: movie.slug },
-    props: { movie },
-  }));
+export const prerender = false;
+
+const { slug } = Astro.params;
+const movies = await getAllMovies();
+const movie = movies.find(m => m.slug === slug);
+
+if (!movie) {
+  return Astro.redirect('/404');
 }
-
-const { movie } = Astro.props;
 ---
 
 <Layout title={movie.title} description={movie.description}>

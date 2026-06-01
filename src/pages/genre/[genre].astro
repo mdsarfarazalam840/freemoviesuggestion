@@ -3,17 +3,13 @@ import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import MovieCard from '../../components/MovieCard.astro';
 import Footer from '../../components/Footer.astro';
-import { movies, GENRES } from '../../data/movies';
+import { getAllMovies } from '../../services/movieService';
 
-export function getStaticPaths() {
-  return GENRES.map(genre => ({
-    params: { genre: genre.toLowerCase() },
-    props: { genre },
-  }));
-}
+export const prerender = false
 
-const { genre } = Astro.props;
-const filteredMovies = movies.filter(m => m.genres.some(g => g.toLowerCase() === genre.toLowerCase()));
+const { genre } = Astro.params;
+const movies = await getAllMovies();
+const filteredMovies = movies.filter(m => m.genres.some(g => g.toLowerCase() === genre?.toLowerCase()));
 ---
 
 <Layout title={`${genre} Movies`} description={`Find the best ${genre} movies suggested by our community.`}>

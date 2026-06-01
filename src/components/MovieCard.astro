@@ -11,8 +11,8 @@ const { movie, rank } = Astro.props;
 
 <div 
   class="group relative flex flex-col bg-canvas rounded-vercel-md border border-hairline overflow-hidden hover:shadow-vercel transition-all duration-300 movie-card"
-  data-genres={movie.genres.join(',').toLowerCase()}
-  data-ott={movie.ottPlatforms.map(p => p.name).join(',').toLowerCase()}
+  data-genres={(movie.genres || []).join(',').toLowerCase()}
+  data-ott={(movie.ott_platforms || movie.ottPlatforms || []).map(p => p.name).join(',').toLowerCase()}
 >
   <a href={`/movie/${movie.slug}`} class="absolute inset-0 z-0" aria-label={`View details for ${movie.title}`}></a>
   
@@ -62,7 +62,7 @@ const { movie, rank } = Astro.props;
     </p>
     
     <div class="mt-4 flex flex-wrap gap-2 pt-4 border-t border-hairline pointer-events-auto">
-      {movie.ottPlatforms.slice(0, 3).map(platform => (
+      {(movie.ott_platforms || movie.ottPlatforms || []).slice(0, 3).map(platform => (
         <a 
           href={`/ott/${platform.name.toLowerCase().replace('+', 'plus').replace(' ', '-')}`}
           class="inline-flex items-center rounded-vercel-pill bg-canvas-soft px-2 py-0.5 text-[10px] font-medium text-body border border-hairline hover:border-hairline-strong hover:bg-canvas-soft-2 transition-all"
@@ -70,8 +70,8 @@ const { movie, rank } = Astro.props;
           {platform.name}
         </a>
       ))}
-      {movie.ottPlatforms.length > 3 && (
-        <span class="text-[10px] text-mute flex items-center">+{movie.ottPlatforms.length - 3} more</span>
+      {(movie.ott_platforms || movie.ottPlatforms) && (movie.ott_platforms || movie.ottPlatforms).length > 3 && (
+        <span class="text-[10px] text-mute flex items-center">+{(movie.ott_platforms || movie.ottPlatforms).length - 3} more</span>
       )}
     </div>
   </div>

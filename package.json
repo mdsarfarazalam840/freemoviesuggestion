@@ -12,8 +12,19 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/node": "^10.1.2",
+    "@supabase/supabase-js": "^2.106.2",
     "@tailwindcss/vite": "^4.3.0",
+    "@upstash/redis": "^1.38.0",
     "astro": "^6.4.2",
-    "tailwindcss": "^4.3.0"
+    "dotenv": "^17.4.2",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.22.4"
   }
 }

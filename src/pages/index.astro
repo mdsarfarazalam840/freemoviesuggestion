@@ -4,12 +4,15 @@ import Navbar from '../components/Navbar.astro';
 import Hero from '../components/Hero.astro';
 import MovieCard from '../components/MovieCard.astro';
 import Footer from '../components/Footer.astro';
-import { movies, REGIONS, GENRES, OTT_PLATFORMS } from '../data/movies';
+import { getTrendingMovies, getBollywoodMovies, getTollywoodMovies } from '../services/movieService';
+import { REGIONS, GENRES, OTT_PLATFORMS } from '../data/movies';
+
+const movies = await getTrendingMovies();
 
 const top10 = movies.filter(m => m.isTop10).sort((a, b) => (a.rank || 0) - (b.rank || 0));
-const bollywood = movies.filter(m => m.region === 'Bollywood').slice(0, 4);
+const bollywood = await getBollywoodMovies();
+const tollywood = await getTollywoodMovies();
 const hollywood = movies.filter(m => m.region === 'Hollywood').slice(0, 4);
-const tollywood = movies.filter(m => m.region === 'Tollywood').slice(0, 4);
 ---
 
 <Layout title="Home">

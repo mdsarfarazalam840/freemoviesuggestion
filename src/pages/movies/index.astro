@@ -3,7 +3,10 @@ import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import MovieCard from '../../components/MovieCard.astro';
 import Footer from '../../components/Footer.astro';
-import { movies, GENRES, OTT_PLATFORMS } from '../../data/movies';
+import { getAllMovies } from '../../services/movieService';
+import { GENRES, OTT_PLATFORMS } from '../../data/movies';
+
+const movies = await getAllMovies();
 
 // Get filters from URL
 const selectedGenre = Astro.url.searchParams.get('genre');
@@ -92,7 +95,7 @@ if (selectedOtt) {
           </div>
 
           <div id="movie-grid" class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
-            {movies.map(movie => <MovieCard movie={movie} />)}
+            {filteredMovies.map(movie => <MovieCard movie={movie} />)}
           </div>
 
           <div id="no-results" class="hidden py-24 text-center">
@@ -121,8 +124,8 @@ if (selectedOtt) {
     let visibleCount = 0;
     
     movieCards.forEach((card: any) => {
-      const cardGenres = card.dataset.genres.split(',');
-      const cardOtts = card.dataset.ott.split(',');
+      const cardGenres = (card.dataset.genres || '').split(',');
+      const cardOtts = (card.dataset.ott || '').split(',');
       
       const genreMatch = !genre || cardGenres.includes(genre);
       const ottMatch = !ott || cardOtts.includes(ott);

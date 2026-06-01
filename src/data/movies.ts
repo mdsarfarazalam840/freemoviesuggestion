@@ -174,5 +174,31 @@ export const movies: Movie[] = [
     ottPlatforms: [OTT_PLATFORMS[1]],
     isTop10: true,
     rank: 10
+  },
+  {
+    id: '11',
+    title: 'Dilwale Dulhania Le Jayenge',
+    slug: 'dilwale-dulhania-le-jayenge',
+    thumbnail: 'https://image.tmdb.org/t/p/w500/u3pM9bHh2Z6v1e36H8j2V6sWkZq.jpg',
+    rating: 8.0,
+    description: 'A young man and a young woman fall in love while on a vacation in Europe, but they must overcome traditional obstacles.',
+    releaseYear: 1995,
+    region: 'Bollywood',
+    genres: ['Romance', 'Drama'],
+    ottPlatforms: [OTT_PLATFORMS[0], OTT_PLATFORMS[3]],
+    isTop10: false
+  },
+  {
+    id: '12',
+    title: 'Magadheera',
+    slug: 'magadheera',
+    thumbnail: 'https://image.tmdb.org/t/p/w500/u3pM9bHh2Z6v1e36H8j2V6sWkZq.jpg',
+    rating: 7.7,
+    description: 'A man is reincarnated after being killed by a jealous rival, and he seeks to reunite with his lover and fulfill his destiny.',
+    releaseYear: 2009,
+    region: 'Tollywood',
+    genres: ['Action', 'Romance'],
+    ottPlatforms: [OTT_PLATFORMS[1]],
+    isTop10: false
   }
 ];
