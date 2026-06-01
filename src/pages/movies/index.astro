@@ -165,21 +165,27 @@ if (selectedOtt) {
       }
     }
 
-    // Update active states of filter links (optional but recommended)
+    // Update active states of filter links
     const filterLinks = document.querySelectorAll('aside a');
     filterLinks.forEach((link: any) => {
       const linkUrl = new URL(link.href, window.location.origin);
-      const linkGenre = linkUrl.searchParams.get('genre')?.toLowerCase();
-      const linkOtt = linkUrl.searchParams.get('ott')?.toLowerCase();
+      const linkGenre = linkUrl.searchParams.get('genre')?.toLowerCase() || null;
+      const linkOtt = linkUrl.searchParams.get('ott')?.toLowerCase() || null;
       
-      const isAllGenres = link.textContent.trim() === 'All Genres';
-      const isAllPlatforms = link.textContent.trim() === 'All Platforms';
-      
+      const currentGenre = url.searchParams.get('genre')?.toLowerCase() || null;
+      const currentOtt = url.searchParams.get('ott')?.toLowerCase() || null;
+
       let isActive = false;
-      if (isAllGenres) isActive = !genre;
-      else if (isAllPlatforms) isActive = !ott;
-      else if (linkGenre) isActive = linkGenre === genre;
-      else if (linkOtt) isActive = linkOtt === ott;
+      
+      // Determine if this is a Genre filter link or an OTT filter link
+      const isGenreLink = link.closest('div')?.previousElementSibling?.textContent?.toLowerCase().includes('genres');
+      const isOttLink = link.closest('div')?.previousElementSibling?.textContent?.toLowerCase().includes('ott platforms');
+
+      if (isGenreLink) {
+        isActive = linkGenre === currentGenre;
+      } else if (isOttLink) {
+        isActive = linkOtt === currentOtt;
+      }
       
       if (isActive) {
         link.classList.add('bg-ink', 'text-canvas', 'border-ink');

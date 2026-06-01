@@ -1,4 +1,6 @@
 ---
+import ThemeToggle from './ThemeToggle.astro';
+
 const navLinks = [
   { href: '/movies', label: 'All Movies' },
   { href: '/#regions', label: 'Regions' },
@@ -36,6 +38,7 @@ const navLinks = [
     </div>
 
     <div class="flex items-center gap-3">
+      <ThemeToggle />
       <a 
         href="/movies" 
         class="hidden sm:inline-flex h-9 items-center justify-center rounded-vercel-pill bg-ink px-4 text-sm font-medium text-canvas hover:bg-ink/90 transition-colors"
