@@ -1,4 +1,6 @@
 ---
+import ThemeToggle from './ThemeToggle.astro';
+
 const navLinks = [
   { href: '/movies', label: 'All Movies' },
   { href: '/#regions', label: 'Regions' },
@@ -11,11 +13,15 @@ const navLinks = [
   <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
     <div class="flex items-center gap-8">
       <a href="/" class="flex items-center gap-2 group">
-        <div class="h-8 w-8 bg-ink flex items-center justify-center rounded-vercel-sm group-hover:bg-gradient-develop-start transition-colors">
-          <svg viewBox="0 0 24 24" class="h-5 w-5 fill-canvas" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z" />
+        <span class="brand-logo-icon flex h-8 w-8 items-center justify-center rounded-vercel-sm bg-ink" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4.4 10.25H19.6V17.25C19.6 18.05 18.95 18.7 18.15 18.7H5.85C5.05 18.7 4.4 18.05 4.4 17.25V10.25Z" />
+            <path d="M4.2 10.25L3.65 7.15C3.5 6.35 4.02 5.58 4.82 5.43L16.85 3.2C17.65 3.05 18.42 3.58 18.57 4.38L19.1 7.2L4.2 10.25Z" />
+            <path d="M7.2 4.98L9.95 8.98" />
+            <path d="M11.95 4.1L14.7 8.02" />
+            <path d="M16.45 3.27L18.98 6.88" />
           </svg>
-        </div>
+        </span>
         <span class="text-lg font-semibold tracking-tight text-ink">Free Movie Suggestion</span>
       </a>
       
@@ -32,15 +38,53 @@ const navLinks = [
     </div>
 
     <div class="flex items-center gap-3">
+      <ThemeToggle />
       <a 
         href="/movies" 
         class="hidden sm:inline-flex h-9 items-center justify-center rounded-vercel-pill bg-ink px-4 text-sm font-medium text-canvas hover:bg-ink/90 transition-colors"
       >
         Find Suggestion
       </a>
-      <button class="md:hidden p-2 text-body hover:text-ink">
+      <button id="menu-toggle" aria-label="Toggle menu" class="md:hidden p-2 text-body hover:text-ink">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       </button>
     </div>
   </div>
 </nav>
+
+<div id="mobile-menu" class="hidden fixed inset-0 z-50 bg-canvas p-6 pt-24 md:hidden">
+  <button id="close-menu" aria-label="Close menu" class="absolute top-4 right-4 p-2 text-body hover:text-ink">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+  </button>
+  <div class="flex flex-col gap-4">
+    {navLinks.map(link => (
+      <a 
+        href={link.href} 
+        class="px-3 py-2 text-lg font-medium text-body hover:text-ink hover:bg-canvas-soft-2 rounded-vercel-pill transition-all"
+      >
+        {link.label}
+      </a>
+    ))}
+  </div>
+</div>
+
+<script>
+  const menuToggle = document.getElementById('menu-toggle');
+  const closeMenu = document.getElementById('close-menu');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const menuLinks = mobileMenu?.querySelectorAll('a');
+
+  menuToggle?.addEventListener('click', () => {
+    mobileMenu?.classList.toggle('hidden');
+  });
+
+  closeMenu?.addEventListener('click', () => {
+    mobileMenu?.classList.add('hidden');
+  });
+
+  menuLinks?.forEach(link => {
+    link.addEventListener('click', () => {
+      mobileMenu?.classList.add('hidden');
+    });
+  });
+</script>

@@ -2,23 +2,24 @@
 import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import Footer from '../../components/Footer.astro';
-import { movies } from '../../data/movies';
+import { getAllMovies } from '../../services/movieService';
 
-export function getStaticPaths() {
-  return movies.map(movie => ({
-    params: { slug: movie.slug },
-    props: { movie },
-  }));
+export const prerender = false;
+
+const { slug } = Astro.params;
+const movies = await getAllMovies();
+const movie = movies.find(m => m.slug === slug);
+
+if (!movie) {
+  return Astro.redirect('/404');
 }
-
-const { movie } = Astro.props;
 ---
 
 <Layout title={movie.title} description={movie.description}>
   <Navbar />
   <main class="bg-canvas min-h-screen">
     <!-- Hero Banner -->
-    <div class="relative h-[50vh] min-h-[400px] w-full overflow-hidden">
+    <div class="relative min-h-[400px] md:min-h-[520px] w-full">
       <img 
         src={movie.thumbnail} 
         alt={movie.title}
@@ -26,8 +27,8 @@ const { movie } = Astro.props;
       />
       <div class="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/60 to-transparent"></div>
       
-      <div class="relative mx-auto max-w-7xl px-4 h-full flex items-end pb-12 sm:px-6 lg:px-8">
-        <div class="flex flex-col md:flex-row gap-8 items-end w-full">
+      <div class="relative mx-auto max-w-7xl px-4 h-full flex items-center md:items-end pb-12 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row gap-8 items-center md:items-end w-full">
           <div class="w-48 sm:w-64 flex-shrink-0 shadow-vercel-lg rounded-vercel-md overflow-hidden border border-hairline bg-canvas">
              <img 
               src={movie.thumbnail} 

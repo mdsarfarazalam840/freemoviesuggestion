@@ -3,17 +3,13 @@ import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import MovieCard from '../../components/MovieCard.astro';
 import Footer from '../../components/Footer.astro';
-import { movies, REGIONS } from '../../data/movies';
+import { getAllMovies } from '../../services/movieService';
 
-export function getStaticPaths() {
-  return REGIONS.map(region => ({
-    params: { region: region.toLowerCase() },
-    props: { region },
-  }));
-}
+export const prerender = false;
 
-const { region } = Astro.props;
-const filteredMovies = movies.filter(m => m.region.toLowerCase() === region.toLowerCase());
+const { region } = Astro.params;
+const movies = await getAllMovies();
+const filteredMovies = movies.filter(m => m.region.toLowerCase() === region?.toLowerCase());
 ---
 
 <Layout title={`${region} Movies`} description={`The best ${region} movies selected for you.`}>
