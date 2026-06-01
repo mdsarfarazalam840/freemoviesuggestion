@@ -38,9 +38,46 @@ const navLinks = [
       >
         Find Suggestion
       </a>
-      <button class="md:hidden p-2 text-body hover:text-ink">
+      <button id="menu-toggle" aria-label="Toggle menu" class="md:hidden p-2 text-body hover:text-ink">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       </button>
     </div>
   </div>
 </nav>
+
+<div id="mobile-menu" class="hidden fixed inset-0 z-50 bg-canvas p-6 pt-24 md:hidden">
+  <button id="close-menu" aria-label="Close menu" class="absolute top-4 right-4 p-2 text-body hover:text-ink">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+  </button>
+  <div class="flex flex-col gap-4">
+    {navLinks.map(link => (
+      <a 
+        href={link.href} 
+        class="px-3 py-2 text-lg font-medium text-body hover:text-ink hover:bg-canvas-soft-2 rounded-vercel-pill transition-all"
+      >
+        {link.label}
+      </a>
+    ))}
+  </div>
+</div>
+
+<script>
+  const menuToggle = document.getElementById('menu-toggle');
+  const closeMenu = document.getElementById('close-menu');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const menuLinks = mobileMenu?.querySelectorAll('a');
+
+  menuToggle?.addEventListener('click', () => {
+    mobileMenu?.classList.toggle('hidden');
+  });
+
+  closeMenu?.addEventListener('click', () => {
+    mobileMenu?.classList.add('hidden');
+  });
+
+  menuLinks?.forEach(link => {
+    link.addEventListener('click', () => {
+      mobileMenu?.classList.add('hidden');
+    });
+  });
+</script>
