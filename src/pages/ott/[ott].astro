@@ -3,17 +3,18 @@ import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import MovieCard from '../../components/MovieCard.astro';
 import Footer from '../../components/Footer.astro';
-import { movies, OTT_PLATFORMS } from '../../data/movies';
+import { getAllMovies } from '../../services/movieService';
 
-export function getStaticPaths() {
-  return OTT_PLATFORMS.map(ott => ({
-    params: { ott: ott.name.toLowerCase().replace('+', 'plus').replace(' ', '-') },
-    props: { ott: ott.name },
-  }));
-}
+export const prerender = false;
 
-const { ott } = Astro.props;
-const filteredMovies = movies.filter(m => m.ottPlatforms.some(p => p.name.toLowerCase() === ott.toLowerCase()));
+const { ott } = Astro.params;
+const movies = await getAllMovies();
+const normalizeOttSlug = (value = '') => value.toLowerCase().trim().replace(/\+/g, 'plus').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const filteredMovies = movies.filter(m => 
+  (m.ottPlatforms || []).some(p => 
+    normalizeOttSlug(p.name) === normalizeOttSlug(ott)
+  )
+);
 ---
 
 <Layout title={`Movies on ${ott}`} description={`Find the best movies available to watch on ${ott}.`}>
