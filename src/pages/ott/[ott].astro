@@ -3,21 +3,21 @@ import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import MovieCard from '../../components/MovieCard.astro';
 import Footer from '../../components/Footer.astro';
-import { getAllMovies } from '../../services/movieService';
+import { getMoviesPage } from '../../services/movieService';
+import { OTT_PLATFORMS } from '../../data/movies';
 
 export const prerender = false;
 
 const { ott } = Astro.params;
-const movies = await getAllMovies();
 const normalizeOttSlug = (value = '') => value.toLowerCase().trim().replace(/\+/g, 'plus').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-const filteredMovies = movies.filter(m => 
-  (m.ottPlatforms || []).some(p => 
-    normalizeOttSlug(p.name) === normalizeOttSlug(ott)
-  )
-);
+const ottLabel = OTT_PLATFORMS.find((platform) => normalizeOttSlug(platform.name) === normalizeOttSlug(ott))?.name || ott;
+const page = Number(Astro.url.searchParams.get('page') || '1');
+const pageData = await getMoviesPage({ page, limit: 24, ott: ottLabel });
+const filteredMovies = pageData.movies;
+const pageHref = (nextPage: number) => nextPage > 1 ? `/ott/${ott}?page=${nextPage}` : `/ott/${ott}`;
 ---
 
-<Layout title={`Movies on ${ott}`} description={`Find the best movies available to watch on ${ott}.`}>
+<Layout title={`Movies on ${ottLabel}`} description={`Find the best movies available to watch on ${ottLabel}.`}>
   <Navbar />
   <main class="min-h-screen bg-canvas-soft py-16">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -29,15 +29,23 @@ const filteredMovies = movies.filter(m =>
             <li class="text-ink">OTT Platform</li>
           </ol>
         </nav>
-        <h1 class="text-4xl font-bold tracking-tight text-ink">Best on {ott}<span class="text-link">.</span></h1>
+        <h1 class="text-4xl font-bold tracking-tight text-ink">Best on {ottLabel}<span class="text-link">.</span></h1>
         <p class="mt-4 text-lg text-body max-w-2xl">
-          Everything you can stream on {ott} today, handpicked by our recommendation engine.
+          Everything you can stream on {ottLabel} today, handpicked by our recommendation engine.
         </p>
       </div>
 
       <div class="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {filteredMovies.map(movie => <MovieCard movie={movie} />)}
       </div>
+
+      {pageData.totalPages > 1 && (
+        <nav class="mt-10 flex items-center justify-between border-t border-hairline pt-6" aria-label="Pagination">
+          <a href={pageHref(pageData.page - 1)} class:list={['text-sm font-medium text-link hover:underline', pageData.page <= 1 && 'pointer-events-none opacity-40']}>Previous</a>
+          <span class="text-sm text-mute">Page {pageData.page} of {pageData.totalPages}</span>
+          <a href={pageHref(pageData.page + 1)} class:list={['text-sm font-medium text-link hover:underline', pageData.page >= pageData.totalPages && 'pointer-events-none opacity-40']}>Next</a>
+        </nav>
+      )}
     </div>
   </main>
   <Footer />

@@ -2,22 +2,28 @@
 import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import Footer from '../../components/Footer.astro';
-import { getAllMovies } from '../../services/movieService';
+import { getMovieBySlug } from '../../services/movieService';
 
 export const prerender = false;
 
 const { slug } = Astro.params;
-const movies = await getAllMovies();
-const movie = movies.find(m => m.slug === slug);
+const movie = slug ? await getMovieBySlug(slug) : null;
 
 if (!movie) {
-  return Astro.redirect('/404');
+  Astro.response.status = 404;
+}
+
+// Redirect if the slug doesn't match the movie's official slug (e.g. missing ID suffix)
+if (movie && movie.slug !== slug) {
+  return Astro.redirect(`/movie/${movie.slug}`);
 }
 ---
 
-<Layout title={movie.title} description={movie.description}>
+<Layout title={movie?.title || 'Movie Not Found'} description={movie?.description || 'The requested movie could not be found.'}>
   <Navbar />
   <main class="bg-canvas min-h-screen">
+    {movie ? (
+    <>
     <!-- Hero Banner -->
     <div class="relative min-h-[400px] md:min-h-[520px] w-full">
       <img 
@@ -135,6 +141,17 @@ if (!movie) {
         </div>
       </div>
     </section>
+    </>
+    ) : (
+    <div class="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+      <h1 class="text-6xl font-bold text-ink">404</h1>
+      <p class="text-xl text-body mt-4">Movie not found</p>
+      <p class="text-body mt-2">This movie hasn't been added to our database yet.</p>
+      <a href="/" class="mt-8 px-6 py-3 bg-link text-white rounded-vercel-lg font-medium hover:bg-link/90 transition-colors">
+        Browse Movies
+      </a>
+    </div>
+    )}
   </main>
   <Footer />
 </Layout>

@@ -3,30 +3,22 @@ import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import MovieCard from '../../components/MovieCard.astro';
 import Footer from '../../components/Footer.astro';
-import { getAllMovies } from '../../services/movieService';
+import { getMoviesPage } from '../../services/movieService';
 import { GENRES, OTT_PLATFORMS } from '../../data/movies';
 
-const movies = await getAllMovies();
-
-// Get filters from URL
+const page = Number(Astro.url.searchParams.get('page') || '1');
 const selectedGenre = Astro.url.searchParams.get('genre');
 const selectedOtt = Astro.url.searchParams.get('ott');
-const normalizeFilterSlug = (value = '') => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-
-// Filter movies case-insensitively
-let filteredMovies = movies;
-
-if (selectedGenre) {
-  filteredMovies = filteredMovies.filter(m => 
-    (m.genres || []).some(g => normalizeFilterSlug(g) === normalizeFilterSlug(selectedGenre))
-  );
-}
-
-if (selectedOtt) {
-  filteredMovies = filteredMovies.filter(m => 
-    (m.ottPlatforms || []).some(ott => normalizeFilterSlug(ott.name) === normalizeFilterSlug(selectedOtt))
-  );
-}
+const pageData = await getMoviesPage({ page, limit: 24, genre: selectedGenre, ott: selectedOtt });
+const filteredMovies = pageData.movies;
+const buildPageHref = (nextPage: number) => {
+  const params = new URLSearchParams();
+  if (selectedGenre) params.set('genre', selectedGenre);
+  if (selectedOtt) params.set('ott', selectedOtt);
+  if (nextPage > 1) params.set('page', String(nextPage));
+  const query = params.toString();
+  return query ? `/movies?${query}` : '/movies';
+};
 ---
 
 <Layout title="All Movies">
@@ -87,7 +79,7 @@ if (selectedOtt) {
                   : (selectedGenre ? `${selectedGenre} Movies` : (selectedOtt ? `Movies on ${selectedOtt}` : 'All Movies')) 
                 }
               </span>
-              <span class="ml-2 text-sm font-normal text-mute">(<span id="results-count">{filteredMovies.length}</span> results)</span>
+              <span class="ml-2 text-sm font-normal text-mute">(<span id="results-count">{pageData.count}</span> results)</span>
             </h1>
             
             { (selectedGenre || selectedOtt) && (
@@ -98,6 +90,30 @@ if (selectedOtt) {
           <div id="movie-grid" class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
             {filteredMovies.map(movie => <MovieCard movie={movie} />)}
           </div>
+
+          {pageData.totalPages > 1 && (
+            <nav class="mt-10 flex items-center justify-between border-t border-hairline pt-6" aria-label="Pagination">
+              <a
+                href={buildPageHref(pageData.page - 1)}
+                class:list={[
+                  'text-sm font-medium text-link hover:underline',
+                  pageData.page <= 1 && 'pointer-events-none opacity-40',
+                ]}
+              >
+                Previous
+              </a>
+              <span class="text-sm text-mute">Page {pageData.page} of {pageData.totalPages}</span>
+              <a
+                href={buildPageHref(pageData.page + 1)}
+                class:list={[
+                  'text-sm font-medium text-link hover:underline',
+                  pageData.page >= pageData.totalPages && 'pointer-events-none opacity-40',
+                ]}
+              >
+                Next
+              </a>
+            </nav>
+          )}
 
           <div id="no-results" class="hidden py-24 text-center">
             <p class="text-lg text-body">No movies found matching your filters.</p>
@@ -111,45 +127,16 @@ if (selectedOtt) {
 </Layout>
 
 <script>
-  function updateFilters() {
+  function updateUI() {
     const url = new URL(window.location.href);
-    const genre = url.searchParams.get('genre')?.toLowerCase();
-    const ott = url.searchParams.get('ott')?.toLowerCase();
-    
     const movieCards = document.querySelectorAll('.movie-card');
-    const noResults = document.getElementById('no-results');
-    const movieGrid = document.getElementById('movie-grid');
     const resultsCount = document.getElementById('results-count');
     const filterTitle = document.getElementById('filter-title');
-    
-    let visibleCount = 0;
-    
-    movieCards.forEach((card: any) => {
-      const cardGenres = (card.dataset.genres || '').split(',');
-      const cardOtts = (card.dataset.ott || '').split(',');
-      
-      const genreMatch = !genre || cardGenres.includes(genre);
-      const ottMatch = !ott || cardOtts.includes(ott);
-      
-      if (genreMatch && ottMatch) {
-        card.style.display = 'flex';
-        visibleCount++;
-      } else {
-        card.style.display = 'none';
-      }
-    });
-    
-    if (resultsCount) resultsCount.textContent = visibleCount.toString();
-    
-    if (visibleCount === 0) {
-      noResults?.classList.remove('hidden');
-      movieGrid?.classList.add('hidden');
-    } else {
-      noResults?.classList.add('hidden');
-      movieGrid?.classList.remove('hidden');
-    }
 
-    // Update title based on active filters
+    // Update count
+    if (resultsCount) resultsCount.textContent = movieCards.length.toString();
+
+    // Update title
     if (filterTitle) {
       const activeGenre = url.searchParams.get('genre');
       const activeOtt = url.searchParams.get('ott');
@@ -167,8 +154,8 @@ if (selectedOtt) {
 
     // Update active states of filter links
     const filterLinks = document.querySelectorAll('aside a');
-    filterLinks.forEach((link: any) => {
-      const linkUrl = new URL(link.href, window.location.origin);
+    filterLinks.forEach((link) => {
+      const linkUrl = new URL((link as HTMLAnchorElement).href, window.location.origin);
       const linkGenre = linkUrl.searchParams.get('genre')?.toLowerCase() || null;
       const linkOtt = linkUrl.searchParams.get('ott')?.toLowerCase() || null;
       
@@ -177,7 +164,6 @@ if (selectedOtt) {
 
       let isActive = false;
       
-      // Determine if this is a Genre filter link or an OTT filter link
       const isGenreLink = link.closest('div')?.previousElementSibling?.textContent?.toLowerCase().includes('genres');
       const isOttLink = link.closest('div')?.previousElementSibling?.textContent?.toLowerCase().includes('ott platforms');
 
@@ -197,10 +183,8 @@ if (selectedOtt) {
     });
   }
 
-  // Initial update
-  updateFilters();
+  updateUI();
 
-  // Listen for navigation (if using view transitions or popstate)
-  window.addEventListener('popstate', updateFilters);
-  document.addEventListener('astro:after-swap', updateFilters);
+  window.addEventListener('popstate', updateUI);
+  document.addEventListener('astro:after-swap', updateUI);
 </script>
