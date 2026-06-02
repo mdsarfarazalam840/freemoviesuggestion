@@ -103,8 +103,7 @@ export async function syncMovies(targetCount = 1000) {
   
   const stats = {
     fetched: 0,
-    inserted: 0,
-    updated: 0,
+    upserted: 0,
     skipped: 0,
     failed: 0
   };
@@ -121,22 +120,27 @@ export async function syncMovies(targetCount = 1000) {
 
     const movieBatch = [];
     for (const basicMovie of data.results) {
-      if (totalSynced >= targetCount) break;
+      if (totalSynced + movieBatch.length >= targetCount) break;
+
+      // Filter as per PLAN.md
+      if (basicMovie.adult || !basicMovie.poster_path || !basicMovie.release_date) {
+        stats.skipped++;
+        continue;
+      }
 
       try {
         stats.fetched++;
-        // Fetch full details for each movie
         const fullMovie = await fetchMovieFullDetails(basicMovie.id);
         
         let region: 'Hollywood' | 'Bollywood' | 'Tollywood' = 'Hollywood';
         if (fullMovie.original_language === 'hi') region = 'Bollywood';
         if (['te', 'ta', 'kn', 'ml'].includes(fullMovie.original_language)) region = 'Tollywood';
 
-        const mapped = mapTmdbMovie(fullMovie, region, totalSynced);
+        const mapped = mapTmdbMovie(fullMovie, region, totalSynced + movieBatch.length);
         movieBatch.push(mapped);
         
-        // Brief delay between detail calls to avoid aggressive bursts
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // Increase delay to ~500ms to adhere to TMDB rate limits (approx 2 reqs/sec)
+        await new Promise(resolve => setTimeout(resolve, 500));
       } catch (err) {
         console.error(`Failed to fetch details for movie ${basicMovie.id}:`, err);
         stats.failed++;
@@ -149,7 +153,7 @@ export async function syncMovies(targetCount = 1000) {
         console.error('Supabase upsert error:', error);
         stats.failed += movieBatch.length;
       } else {
-        stats.inserted += movieBatch.length; 
+        stats.upserted += movieBatch.length; 
         totalSynced += movieBatch.length;
       }
     }
@@ -157,14 +161,14 @@ export async function syncMovies(targetCount = 1000) {
     saveProgress(currentPage, totalSynced);
     currentPage++;
     
-    console.log(`Status: ${totalSynced}/${targetCount} movies processed.`);
+    console.log(`Status: ${totalSynced}/${targetCount} movies processed. Stats:`, stats);
     
-    // Clear caches after each batch to reflect new data
+    // Clear caches after each batch
     await clearRedisCache();
   }
 
   console.log('Sync finished.');
-  console.log('Stats:', stats);
+  console.log('Final Stats:', stats);
   return stats;
 }
 

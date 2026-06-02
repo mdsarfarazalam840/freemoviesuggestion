@@ -1,5 +1,3 @@
-import * as dotenv from 'dotenv';
-dotenv.config({ override: true });
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseServerKey, getSupabaseUrl } from './env';
 

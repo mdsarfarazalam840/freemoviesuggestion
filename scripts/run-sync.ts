@@ -3,7 +3,7 @@ import { syncMovies, syncTrendingMovies } from '../src/services/sync';
 
 async function runSync() {
   try {
-    const target = process.argv[2] ? parseInt(process.argv[2], 10) : 1000;
+    const target = process.argv[2] ? parseInt(process.argv[2], 10) : 10000;
     console.log(`Starting sync (target: ${target} movies)...`);
     
     // First do a quick trending sync to ensure homepage is fresh

@@ -1,10 +1,13 @@
 type EnvMap = Record<string, string | undefined>;
 
+// @ts-ignore
+const importMetaEnv: EnvMap = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
 const serverEnv: EnvMap = typeof process !== 'undefined' ? process.env : {};
 
 export function getServerEnv(names: string[], fallback = ''): string {
   for (const name of names) {
-    const value = serverEnv[name];
+    // Check import.meta.env first (Astro/Vite standard), then process.env
+    const value = importMetaEnv[name] || serverEnv[name];
     if (value) return value;
   }
 
