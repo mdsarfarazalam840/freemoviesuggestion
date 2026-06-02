@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
-import MovieCard from '../../components/MovieCard.astro';
+import MovieCardReact from '../../components/MovieCard.tsx';
 import Footer from '../../components/Footer.astro';
 import { getMoviesPage } from '../../services/movieService';
 import { GENRES } from '../../data/movies';
@@ -41,7 +41,7 @@ const pageHref = (nextPage: number) => nextPage > 1 ? `/genre/${currentGenre}?pa
       {filteredMovies.length > 0 ? (
         <>
           <div class="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {filteredMovies.map(movie => <MovieCard movie={movie} />)}
+            {filteredMovies.map(movie => <MovieCardReact client:visible movie={movie} />)}
           </div>
           {pageData.totalPages > 1 && (
             <nav class="mt-10 flex items-center justify-between border-t border-hairline pt-6" aria-label="Pagination">

@@ -170,6 +170,7 @@ export async function syncMovies(targetCount = 1000) {
 
 async function clearRedisCache() {
   try {
+    // Note: Update this list whenever cache versions (e.g., v5) or key structures in movieService.ts change.
     const keys = [
       'trending_movies',
       'all_movies',
@@ -177,14 +178,16 @@ async function clearRedisCache() {
       'tollywood_movies',
       'remote_movies:v2:trending',
       'remote_movies:v2:all',
-      'remote_movies:v3:all'
+      'remote_movies:v3:all',
+      'remote_movies:v5:trending:page:1:limit:24:top:1',
+      'remote_movies:v5:page:page:1:limit:24:region:bollywood',
+      'remote_movies:v5:page:page:1:limit:24:region:tollywood',
+      'remote_movies:v5:page:page:1:limit:24'
     ];
     // Delete keys one by one as Redis.del might fail on non-existent keys depending on implementation
     for (const key of keys) {
       await redis.del(key).catch(() => {});
     }
-    // Also try to clear versioned keys if they exist
-    await redis.del('remote_movies:v4:page:page:1:limit:24').catch(() => {});
   } catch (err) {
     console.warn('Failed to clear some Redis caches:', err);
   }

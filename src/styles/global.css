@@ -91,6 +91,9 @@
 }
 
 @layer components {
+  .glass {
+    @apply bg-canvas/60 backdrop-blur-md border border-hairline/50;
+  }
   .brand-logo-icon {
     color: var(--color-canvas);
     transition:

@@ -405,13 +405,37 @@ export async function getTrendingMovies(limit = DEFAULT_LIMIT): Promise<Movie[]>
   
   const cachedData = await getCachedData<MovieRow[]>(cacheKey);
   if (Array.isArray(cachedData)) {
-    console.log('Returning cached trending data');
     return normalizeMovies(cachedData);
   }
 
-  console.log('Fetching trending from Supabase');
   const { movies: result } = await fetchMoviePage({ limit, topOnly: true });
 
+  await setCachedData(cacheKey, result);
+  
+  return result;
+}
+
+export async function getPopularMovies(limit = 10): Promise<Movie[]> {
+  const cacheKey = movieCacheKey('popular', { limit });
+  
+  const cachedData = await getCachedData<MovieRow[]>(cacheKey);
+  if (Array.isArray(cachedData)) {
+    return normalizeMovies(cachedData);
+  }
+
+  // Fetch movies ordered by popularity
+  const { data, error } = await supabase
+    .from('movies')
+    .select('*')
+    .order('popularity', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.warn('Supabase popular movie fetch failed:', error);
+    return [];
+  }
+
+  const result = normalizeMovies(data);
   await setCachedData(cacheKey, result);
   
   return result;
@@ -424,6 +448,10 @@ export async function getAllMovies(options: MovieQueryOptions = {}): Promise<Mov
 
 export async function getBollywoodMovies(limit = 4): Promise<Movie[]> {
   return getAllMovies({ region: 'Bollywood', limit });
+}
+
+export async function getHollywoodMovies(limit = 4): Promise<Movie[]> {
+  return getAllMovies({ region: 'Hollywood', limit });
 }
 
 export async function getTollywoodMovies(limit = 4): Promise<Movie[]> {
