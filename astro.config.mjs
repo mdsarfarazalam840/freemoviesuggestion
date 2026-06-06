@@ -6,8 +6,11 @@ import react from '@astrojs/react';
 
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://freemoviesuggestion.com',
   output: 'server',
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    prerenderEnvironment: 'node',
+  }),
   vite: {
     plugins: [tailwindcss()],
   },

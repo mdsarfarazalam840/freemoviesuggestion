@@ -5,8 +5,11 @@ import Hero from '../components/Hero.astro';
 import MovieCardAstro from '../components/MovieCard.astro';
 import MovieCardReact from '../components/MovieCard.tsx';
 import Footer from '../components/Footer.astro';
+import FAQ from '../components/FAQ.astro';
 import { getBollywoodMovies, getHollywoodMovies, getTollywoodMovies, getPopularMovies } from '../services/movieService';
 import { GENRES, OTT_PLATFORMS } from '../data/movies';
+
+export const prerender = false;
 
 const top10 = await getPopularMovies(10);
 const bollywood = await getBollywoodMovies();
@@ -18,7 +21,7 @@ const tollywood = await getTollywoodMovies();
 	<Navbar />
 	<main>
 		<Hero 
-			title="Find your next favorite movie" 
+			title="Free Movie Suggestion: Discover your next watch" 
 			subtitle="The ultimate suggestion engine for Bollywood, Hollywood, and Tollywood. Filter by genre, OTT platforms, and more."
 		/>
 
@@ -154,6 +157,57 @@ const tollywood = await getTollywoodMovies();
 				<div class="aspect-[1404/767] w-[87.75rem] bg-gradient-to-r from-gradient-develop-start to-gradient-preview-end opacity-20" style="clip-path: polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)"></div>
 			</div>
 		</section>
+		<!-- SEO Content Section -->
+		<section class="py-20 bg-canvas border-t border-hairline">
+			<div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+				<div class="max-w-none">
+					<h2 class="text-3xl font-bold tracking-tight text-ink mb-8">The Ultimate Guide to Finding Your Next Watch: Free Movie Suggestion Tool</h2>
+					
+					<div class="space-y-6 text-body text-lg leading-relaxed">
+						<p>
+							In today’s digital era, the abundance of streaming platforms like Netflix, Amazon Prime Video, Disney+, and JioCinema has paradoxically made it harder to choose what to watch. We’ve all spent hours scrolling through endless carousels, only to give up and re-watch a classic. That’s where our <strong>Free movie suggestion</strong> tool comes in. Designed to be your ultimate companion for cinematic discovery, we provide curated, data-driven <strong>movie suggestions</strong> tailored to your mood, platform, and regional preferences. Our goal is to eliminate "decision fatigue" and help you spend more time watching and less time searching.
+						</p>
+
+						<p>
+							Whether you are looking for <strong>good movie suggestions</strong> to unwind after a long day or need specific <strong>netflix movie suggestions</strong> for your weekend binge, our platform simplifies the search. We understand that everyone has different tastes, which is why we offer a diverse range of categories, including Bollywood, Hollywood, and Tollywood hits. Each recommendation is backed by detailed information, including plot summaries, cast details, and streaming availability, making us the most comprehensive source for film lovers.
+						</p>
+
+						<h3 class="text-2xl font-bold text-ink mt-12 mb-4">Tailored Suggestions for Every Occasion and Platform</h3>
+						<p>
+							Planning a weekend marathon can be daunting with so many options. Our <strong>prime video weekend movie suggestions</strong> are curated to ensure you don't miss out on hidden gems or the latest blockbusters that have just landed on the platform. If you’re gathering the kids for a fun evening, our <strong>family movie suggestions</strong> feature heartwarming stories that appeal to all ages, ensuring a safe and entertaining experience for everyone. For those cozy evenings with your partner, our <strong>romantic movie suggestions</strong> provide the perfect backdrop for a memorable night, ranging from classic love stories to modern indie favorites.
+						</p>
+
+						<p>
+							One of the most common challenges is deciding on something for a group. Our <strong>movie suggestions for movie night</strong> are specifically picked to be crowd-pleasers, balancing action, drama, and comedy to keep everyone engaged. If you’re someone who loves staying ahead of the curve and wants to be the first to know what's hot, our <strong>new movie suggestions</strong> section is constantly updated with the latest theatrical releases and digital premieres. We keep a close eye on trending lists and critical acclaim to ensure our "new" section always feels fresh and relevant.
+						</p>
+
+						<h3 class="text-2xl font-bold text-ink mt-12 mb-4">Explore Diverse Genres and Deep Emotional Connections</h3>
+						<p>
+							Cinematic preferences often shift with our moods. Sometimes you want the thrill of a scare mixed with a good laugh; our <strong>horror comedy movie suggestions</strong> and <strong>hilarious horror movie suggestions</strong> are perfect for those who enjoy a unique blend of genres that keep you on the edge of your seat while still providing comic relief. We pride ourselves on offering the <strong>best movie suggestions</strong> across the board, ensuring that whether you want an intense psychological thriller, a soul-stirring documentary, or a light-hearted rom-com, you find exactly what you need.
+						</p>
+
+						<p>
+							Our tool doesn’t just give you a random list; it provides essential context. We help you find where a movie is streaming in your specific region, its current IMDb or Rotten Tomatoes rating, and why it’s specifically worth your time. From the high-octane action of Hollywood to the soulful, musical storytelling of Bollywood and the mass-appeal spectacles of Tollywood, our database is exhaustive and inclusive of global cinema.
+						</p>
+
+						<h3 class="text-2xl font-bold text-ink mt-12 mb-4">Why Choose Our Free Movie Suggestion Tool?</h3>
+						<p>
+							Unlike generic algorithms that often push sponsored content or the same five movies repeatedly, our <strong>Free movie suggestion</strong> engine focuses on quality, diversity, and relevance. We aggregate data from multiple credible sources to bring you <strong>good movie suggestions</strong> that have been vetted by critics and audiences alike. We also take into account user feedback to refine our recommendations over time.
+						</p>
+
+						<p>
+							Finding the right film shouldn't be a chore or a source of stress. With our intuitive and lightning-fast interface, you can filter by region, genre, or platform in seconds. Whether you need <strong>netflix movie suggestions</strong> specifically for a solo watch or want to explore what's trending across all OTT services for a party, we’ve got you covered. Our platform is mobile-responsive, allowing you to find a movie on your phone and start watching on your TV immediately.
+						</p>
+
+						<p>
+							In conclusion, our mission is to bring back the joy of watching movies by taking the "search" out of the experience entirely. The next time you find yourself stuck on the home screen of a streaming app, remember that the perfect <strong>movie suggestions</strong> are just a click away. From <strong>romantic movie suggestions</strong> to <strong>hilarious horror movie suggestions</strong>, we are here to ensure every movie night is a resounding success. We are constantly expanding our database and refining our algorithms to serve you better. Happy watching, and may you find your next cinematic obsession right here!
+						</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<FAQ />
 	</main>
 	<Footer />
 </Layout>

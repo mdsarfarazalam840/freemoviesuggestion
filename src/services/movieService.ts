@@ -441,6 +441,28 @@ export async function getPopularMovies(limit = 10): Promise<Movie[]> {
   return result;
 }
 
+export async function getAllMovieSlugs(): Promise<string[]> {
+  const cacheKey = 'remote_movies:v1:all_slugs';
+  const cachedData = await getCachedData<string[]>(cacheKey);
+
+  if (cachedData) return cachedData;
+
+  const { data, error } = await supabase
+    .from('movies')
+    .select('slug')
+    .order('popularity', { ascending: false });
+
+  if (error) {
+    console.warn('Supabase fetch all slugs failed:', error);
+    return [];
+  }
+
+  const slugs = data.map(row => row.slug);
+  await setCachedData(cacheKey, slugs, 3600); // 1 hour cache
+
+  return slugs;
+}
+
 export async function getAllMovies(options: MovieQueryOptions = {}): Promise<Movie[]> {
   const { movies } = await getMoviesPage(options);
   return movies;

@@ -20,6 +20,48 @@ if (movie && movie.slug !== slug) {
 ---
 
 <Layout title={movie?.title || 'Movie Not Found'} description={movie?.description || 'The requested movie could not be found.'}>
+  {movie && (
+    <script type="application/ld+json" is:inline set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Movie",
+      "name": movie.title,
+      "description": movie.description,
+      "image": movie.thumbnail,
+      "datePublished": movie.releaseYear.toString(),
+      "genre": movie.genres,
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": movie.rating,
+        "bestRating": "10",
+        "worstRating": "1",
+        "ratingCount": "100" // Placeholder as TMDB rating count isn't in our schema yet
+      }
+    })} />
+    <script type="application/ld+json" is:inline set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": Astro.site
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Movies",
+          "item": new URL('/movies', Astro.site)
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": movie.title,
+          "item": new URL(Astro.url.pathname, Astro.site)
+        }
+      ]
+    })} />
+  )}
   <Navbar />
   <main class="bg-canvas min-h-screen">
     {movie ? (

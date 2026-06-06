@@ -6,7 +6,7 @@ interface Props {
 	description?: string;
 }
 
-const { title, description = "Free Movie Suggestion tool - Find where to watch your favorite Bollywood, Hollywood, and Tollywood movies." } = Astro.props;
+const { title, description = "Free Movie Suggestion - The ultimate tool for movie suggestions. Find good movie suggestions for Netflix, Prime Video, and more. Discover your next favorite movie today!" } = Astro.props;
 ---
 
 <!doctype html>
@@ -21,13 +21,24 @@ const { title, description = "Free Movie Suggestion tool - Find where to watch y
 		<meta name="apple-mobile-web-app-title" content="MovieReco" />
 		<link rel="manifest" href="/site.webmanifest" />
 		<meta name="generator" content={Astro.generator} />
-		<title>{title} | Free Movie Suggestion</title>
+		<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+		<title>{title === 'Home' ? 'Free Movie Suggestion | Discover What to Watch' : `${title} | Free Movie Suggestion`}</title>
 		<meta name="description" content={description} />
+		<meta name="keywords" content="movie suggestions, free movie suggestion, what to watch, netflix movie suggestions, bollywood movie suggestions, hollywood movie suggestions" />
 		
 		<!-- OpenGraph -->
-		<meta property="og:title" content={title} />
+		<meta property="og:title" content={title === 'Home' ? 'Free Movie Suggestion | Discover What to Watch' : `${title} | Free Movie Suggestion`} />
 		<meta property="og:description" content={description} />
 		<meta property="og:type" content="website" />
+		<meta property="og:url" content={Astro.url.href} />
+		<meta property="og:image" content={new URL('/web-app-manifest-512x512.png', Astro.site)} />
+		<meta property="og:site_name" content="Free Movie Suggestion" />
+
+		<!-- Twitter -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={`${title} | Free Movie Suggestion`} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={new URL('/web-app-manifest-512x512.png', Astro.site)} />
 
 		<script is:inline>
 			const getThemePreference = () => {
