@@ -127,19 +127,6 @@ const NavbarSearch: React.FC = () => {
           className="min-w-0 flex-1 bg-transparent text-sm text-ink placeholder:text-mute focus:outline-none"
         />
 
-        <AnimatePresence>
-          {!query && (
-            <motion.kbd
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="ml-auto flex h-5 shrink-0 items-center gap-1 rounded border border-hairline bg-canvas px-1.5 font-mono text-[10px] font-medium"
-            >
-              <span className="text-xs">⌘</span>K
-            </motion.kbd>
-          )}
-        </AnimatePresence>
-
         {query && (
           <button
             type="submit"
