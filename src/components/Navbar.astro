@@ -1,70 +1,141 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
+import NavbarSearch from './NavbarSearch.tsx';
 
 const navLinks = [
   { href: '/movies', label: 'All Movies' },
-  { href: '/#regions', label: 'Regions' },
-  { href: '/#genres', label: 'Genres' },
-  { href: '/#ott', label: 'OTT Platforms' },
+];
+
+const categories = [
+  {
+    label: 'Regions',
+    href: '/#regions',
+    description: 'Explore movies from Bollywood, Hollywood, and more.',
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`
+  },
+  {
+    label: 'Genres',
+    href: '/#genres',
+    description: 'Find films by action, comedy, sci-fi, and more.',
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`
+  },
+  {
+    label: 'OTT Platforms',
+    href: '/#ott',
+    description: 'Suggestions for Netflix, Prime, Disney+, and more.',
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6" y2="6"/><line x1="6" y1="18" x2="6" y2="18"/></svg>`
+  },
 ];
 ---
 
-<nav class="sticky top-0 z-50 w-full border-b border-hairline bg-canvas/80 backdrop-blur-md">
+<nav class="sticky top-0 z-50 w-full border-b border-hairline glass-2026">
   <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-    <div class="flex items-center gap-8">
-      <a href="/" class="flex items-center gap-2 group">
-        <span class="brand-logo-icon flex h-8 w-8 items-center justify-center rounded-vercel-sm bg-ink" aria-hidden="true">
-          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4.4 10.25H19.6V17.25C19.6 18.05 18.95 18.7 18.15 18.7H5.85C5.05 18.7 4.4 18.05 4.4 17.25V10.25Z" />
-            <path d="M4.2 10.25L3.65 7.15C3.5 6.35 4.02 5.58 4.82 5.43L16.85 3.2C17.65 3.05 18.42 3.58 18.57 4.38L19.1 7.2L4.2 10.25Z" />
-            <path d="M7.2 4.98L9.95 8.98" />
-            <path d="M11.95 4.1L14.7 8.02" />
-            <path d="M16.45 3.27L18.98 6.88" />
+    <div class="flex items-center gap-6">
+      <a href="/" class="flex items-center gap-2 group shrink-0">
+        <span class="flex h-9 w-9 items-center justify-center rounded-premium overflow-hidden bg-ink text-canvas transition-transform duration-300 group-hover:scale-110" style="border-radius: 14px;" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4.4 10.25H19.6V17.25C19.6 18.05 18.95 18.7 18.15 18.7H5.85C5.05 18.7 4.4 18.05 4.4 17.25V10.25Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M4.2 10.25L3.65 7.15C3.5 6.35 4.02 5.58 4.82 5.43L16.85 3.2C17.65 3.05 18.42 3.58 18.57 4.38L19.1 7.2L4.2 10.25Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M7.2 4.98L9.95 8.98" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <path d="M11.95 4.1L14.7 8.02" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <path d="M16.45 3.27L18.98 6.88" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
           </svg>
         </span>
-        <span class="text-lg font-semibold tracking-tight text-ink">Free Movie Suggestion</span>
+        <span class="hidden text-xl font-bold tracking-tight text-ink sm:block">Free Movie Suggestion</span>
       </a>
-      
+
       <div class="hidden md:flex items-center gap-1">
         {navLinks.map(link => (
-          <a 
-            href={link.href} 
-            class="px-3 py-2 text-sm font-medium text-body hover:text-ink hover:bg-canvas-soft-2 rounded-vercel-pill transition-all"
-          >
+          <a href={link.href} class="nav-link">
             {link.label}
           </a>
         ))}
+
+        <!-- Categories Dropdown -->
+        <div class="relative group/dropdown">
+          <button class="nav-link flex items-center gap-1 group-hover/dropdown:text-ink">
+            Explore
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300 group-hover/dropdown:rotate-180"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+
+          <div class="absolute left-0 top-full pt-2 opacity-0 translate-y-2 pointer-events-none group-hover/dropdown:opacity-100 group-hover/dropdown:translate-y-0 group-hover/dropdown:pointer-events-auto transition-all duration-300">
+            <div class="w-80 overflow-hidden rounded-premium border border-hairline bg-canvas p-2 shadow-premium">
+              {categories.map(cat => (
+                <a href={cat.href} class="flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-canvas-soft group/item">
+                  <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-premium bg-canvas-soft-2 text-mute group-hover/item:bg-link/10 group-hover/item:text-link transition-colors" set:html={cat.icon} />
+                  <div>
+                    <div class="text-sm font-bold text-ink">{cat.label}</div>
+                    <div class="text-xs text-mute mt-0.5">{cat.description}</div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="flex items-center gap-3">
-      <ThemeToggle />
-      <a 
-        href="/movies" 
-        class="hidden sm:inline-flex h-9 items-center justify-center rounded-vercel-pill bg-ink px-4 text-sm font-medium text-canvas hover:bg-ink/90 transition-colors"
-      >
-        Find Suggestion
-      </a>
-      <button id="menu-toggle" aria-label="Toggle menu" class="md:hidden p-2 text-body hover:text-ink">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-      </button>
+    <!-- Search & Actions -->
+    <div class="flex items-center justify-end gap-3 md:ml-8 md:flex-1">
+      <NavbarSearch client:load />
+
+      <div class="flex items-center gap-2">
+        <ThemeToggle />
+        <a
+          href="/movies"
+          class="hidden sm:inline-flex h-10 items-center justify-center btn-premium bg-link px-6 text-sm font-semibold text-white hover:bg-link-hover"
+        >
+          Find Best Movie
+        </a>
+        <button id="menu-toggle" aria-label="Toggle menu" class="md:hidden p-2 text-body hover:text-ink">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+      </div>
     </div>
   </div>
 </nav>
 
-<div id="mobile-menu" class="hidden fixed inset-0 z-50 bg-canvas p-6 pt-24 md:hidden">
+<!-- Mobile Menu -->
+<div id="mobile-menu" class="hidden fixed inset-0 z-50 bg-canvas p-6 pt-24 md:hidden transition-all duration-300 overflow-y-auto">
   <button id="close-menu" aria-label="Close menu" class="absolute top-4 right-4 p-2 text-body hover:text-ink">
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
   </button>
-  <div class="flex flex-col gap-4">
-    {navLinks.map(link => (
-      <a 
-        href={link.href} 
-        class="px-3 py-2 text-lg font-medium text-body hover:text-ink hover:bg-canvas-soft-2 rounded-vercel-pill transition-all"
-      >
-        {link.label}
-      </a>
-    ))}
+  <div class="flex flex-col gap-6">
+    <form id="mobile-search-form" action="/search" method="GET" role="search" class="relative">
+      <label for="mobile-search-input" class="sr-only">Search movies</label>
+      <button type="submit" class="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-mute transition-colors hover:bg-canvas-soft-2 hover:text-ink" aria-label="Search movies">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </button>
+      <input
+        id="mobile-search-input"
+        type="search"
+        name="q"
+        placeholder="Search movies..."
+        autocomplete="off"
+        class="h-12 w-full rounded-premium border border-hairline bg-canvas-soft py-0 pl-14 pr-4 text-lg text-ink placeholder:text-mute focus:border-link focus:bg-canvas focus:outline-none focus:ring-2 focus:ring-link/20"
+      />
+    </form>
+
+    <div class="space-y-4">
+      <a href="/movies" class="block text-2xl font-bold text-ink">All Movies</a>
+      <div class="pt-4 border-t border-hairline">
+        <div class="text-sm font-bold text-mute uppercase tracking-widest mb-4">Categories</div>
+        <div class="grid gap-4">
+          {categories.map(cat => (
+            <a href={cat.href} class="flex items-center gap-4 text-xl font-bold text-ink">
+              <div class="flex h-10 w-10 items-center justify-center rounded-premium bg-canvas-soft-2 text-mute" set:html={cat.icon} />
+              {cat.label}
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <a href="/movies" class="mt-4 flex h-14 items-center justify-center rounded-premium bg-link text-lg font-bold text-white shadow-glow">
+      Start Discovery
+    </a>
   </div>
 </div>
 
@@ -72,19 +143,23 @@ const navLinks = [
   const menuToggle = document.getElementById('menu-toggle');
   const closeMenu = document.getElementById('close-menu');
   const mobileMenu = document.getElementById('mobile-menu');
-  const menuLinks = mobileMenu?.querySelectorAll('a');
+  const mobileSearchForm = document.getElementById('mobile-search-form');
+  const mobileSearchInput = document.getElementById('mobile-search-input');
 
   menuToggle?.addEventListener('click', () => {
-    mobileMenu?.classList.toggle('hidden');
+    mobileMenu?.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
   });
 
   closeMenu?.addEventListener('click', () => {
     mobileMenu?.classList.add('hidden');
+    document.body.style.overflow = '';
   });
 
-  menuLinks?.forEach(link => {
-    link.addEventListener('click', () => {
-      mobileMenu?.classList.add('hidden');
-    });
+  mobileSearchForm?.addEventListener('submit', (e) => {
+    if (!(mobileSearchInput instanceof HTMLInputElement) || !mobileSearchInput.value.trim()) {
+      e.preventDefault();
+      mobileSearchInput?.focus();
+    }
   });
 </script>

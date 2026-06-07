@@ -9,13 +9,13 @@ const currentYear = new Date().getFullYear();
     <div class="grid grid-cols-2 gap-8 md:grid-cols-4 lg:grid-cols-5">
       <div class="col-span-2 lg:col-span-1">
         <a href="/" class="flex items-center gap-2 group">
-          <span class="brand-logo-icon flex h-8 w-8 items-center justify-center rounded-vercel-sm bg-ink" aria-hidden="true">
+          <span class="brand-logo-icon flex h-8 w-8 items-center justify-center rounded-premium overflow-hidden bg-ink text-canvas" style="border-radius: 14px;" aria-hidden="true">
             <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4.4 10.25H19.6V17.25C19.6 18.05 18.95 18.7 18.15 18.7H5.85C5.05 18.7 4.4 18.05 4.4 17.25V10.25Z" />
-              <path d="M4.2 10.25L3.65 7.15C3.5 6.35 4.02 5.58 4.82 5.43L16.85 3.2C17.65 3.05 18.42 3.58 18.57 4.38L19.1 7.2L4.2 10.25Z" />
-              <path d="M7.2 4.98L9.95 8.98" />
-              <path d="M11.95 4.1L14.7 8.02" />
-              <path d="M16.45 3.27L18.98 6.88" />
+              <path d="M4.4 10.25H19.6V17.25C19.6 18.05 18.95 18.7 18.15 18.7H5.85C5.05 18.7 4.4 18.05 4.4 17.25V10.25Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M4.2 10.25L3.65 7.15C3.5 6.35 4.02 5.58 4.82 5.43L16.85 3.2C17.65 3.05 18.42 3.58 18.57 4.38L19.1 7.2L4.2 10.25Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M7.2 4.98L9.95 8.98" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              <path d="M11.95 4.1L14.7 8.02" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              <path d="M16.45 3.27L18.98 6.88" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
             </svg>
           </span>
           <span class="text-base font-semibold tracking-tight text-ink">Free Movie Suggestion</span>
@@ -78,8 +78,18 @@ const currentYear = new Date().getFullYear();
             </a>
           </li>
           <li>
+            <a href="/contact" class="text-sm text-body hover:text-ink transition-colors">
+              Contact Us
+            </a>
+          </li>
+          <li>
             <a href="/privacy" class="text-sm text-body hover:text-ink transition-colors">
               Privacy Policy
+            </a>
+          </li>
+          <li>
+            <a href="/terms" class="text-sm text-body hover:text-ink transition-colors">
+              Terms & Conditions
             </a>
           </li>
         </ul>

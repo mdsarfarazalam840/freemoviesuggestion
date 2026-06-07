@@ -1,0 +1,61 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout 
+  title="Contact Us"
+  description="Get in touch with Free Movie Suggestion. We'd love to hear from you."
+>
+  <Navbar />
+  <main class="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+    <div class="max-w-none text-center">
+      <h1 class="text-4xl font-bold tracking-tight text-ink sm:text-5xl">Contact Us</h1>
+      <p class="mt-6 text-xl text-body leading-relaxed mx-auto max-w-2xl">
+        Have a suggestion, feedback, or just want to say hi? We'd love to hear from you!
+      </p>
+
+      <div class="mt-16 grid grid-cols-1 gap-12 sm:grid-cols-2 text-left">
+        <div class="rounded-premium border border-hairline bg-canvas-soft p-8">
+          <h2 class="text-2xl font-semibold text-ink">Email</h2>
+          <p class="mt-4 text-body">
+            For general inquiries and feedback:
+          </p>
+          <a href="mailto:hello@freemoviesuggestion.com" class="mt-2 block text-lg font-medium text-ink hover:underline decoration-hairline underline-offset-4">
+            hello@freemoviesuggestion.com
+          </a>
+        </div>
+
+        <div class="rounded-premium border border-hairline bg-canvas-soft p-8">
+          <h2 class="text-2xl font-semibold text-ink">Social Media</h2>
+          <p class="mt-4 text-body">
+            Follow us for the latest updates:
+          </p>
+          <div class="mt-4 flex gap-4">
+            <a href="https://twitter.com" class="text-ink hover:text-ink/80 transition-colors">Twitter</a>
+            <a href="https://instagram.com" class="text-ink hover:text-ink/80 transition-colors">Instagram</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-16 rounded-premium border border-hairline p-8 text-left">
+        <h2 class="text-2xl font-semibold text-ink">Frequently Asked Questions</h2>
+        <div class="mt-8 space-y-6">
+          <div>
+            <h3 class="font-medium text-ink">How do you provide suggestions?</h3>
+            <p class="mt-2 text-body">We use a combination of TMDB data and custom algorithms to find movies similar to what you like.</p>
+          </div>
+          <div>
+            <h3 class="font-medium text-ink">Is this service free?</h3>
+            <p class="mt-2 text-body">Yes, Free Movie Suggestion is completely free to use.</p>
+          </div>
+        </div>
+        <div class="mt-8 pt-8 border-t border-hairline text-center">
+          <p class="text-body italic">"Finding your next favorite movie should be easy."</p>
+        </div>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>

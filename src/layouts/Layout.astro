@@ -6,39 +6,66 @@ interface Props {
 	description?: string;
 }
 
-const { title, description = "Free Movie Suggestion - The ultimate tool for movie suggestions. Find good movie suggestions for Netflix, Prime Video, and more. Discover your next favorite movie today!" } = Astro.props;
+const { title, description = "Free Movie Suggestion - The ultimate tool for cinematic discovery. Find top-rated movie suggestions for Netflix, Prime Video, and more. Stop scrolling, start watching." } = Astro.props;
+
+const siteName = "Free Movie Suggestion";
+const fullTitle = title === 'Home' 
+  ? `${siteName} | Discover Your Next Favorite Movie (2026)` 
+  : `${title} - Movie Suggestion | ${siteName}`;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
 		<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="shortcut icon" href="/favicon.ico" />
 		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-		<meta name="apple-mobile-web-app-title" content="MovieReco" />
+		<meta name="apple-mobile-web-app-title" content="Free Movie Suggestion" />
 		<link rel="manifest" href="/site.webmanifest" />
 		<meta name="generator" content={Astro.generator} />
-		<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
-		<title>{title === 'Home' ? 'Free Movie Suggestion | Discover What to Watch' : `${title} | Free Movie Suggestion`}</title>
-		<meta name="description" content={description} />
-		<meta name="keywords" content="movie suggestions, free movie suggestion, what to watch, netflix movie suggestions, bollywood movie suggestions, hollywood movie suggestions" />
+		<link rel="canonical" href={canonicalURL} />
 		
-		<!-- OpenGraph -->
-		<meta property="og:title" content={title === 'Home' ? 'Free Movie Suggestion | Discover What to Watch' : `${title} | Free Movie Suggestion`} />
+		<!-- Primary Meta Tags -->
+		<title>{fullTitle}</title>
+		<meta name="title" content={fullTitle} />
+		<meta name="description" content={description} />
+		<meta name="keywords" content="free movie suggestion, what to watch 2026, best netflix movies, bollywood movie recommendations, hollywood hits, movie discovery tool" />
+		
+		<!-- Fonts -->
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+
+		<!-- OpenGraph / Facebook -->
+		<meta property="og:title" content={fullTitle} />
 		<meta property="og:description" content={description} />
 		<meta property="og:type" content="website" />
 		<meta property="og:url" content={Astro.url.href} />
 		<meta property="og:image" content={new URL('/web-app-manifest-512x512.png', Astro.site)} />
-		<meta property="og:site_name" content="Free Movie Suggestion" />
+		<meta property="og:site_name" content={siteName} />
 
 		<!-- Twitter -->
 		<meta name="twitter:card" content="summary_large_image" />
-		<meta name="twitter:title" content={`${title} | Free Movie Suggestion`} />
+		<meta name="twitter:title" content={fullTitle} />
 		<meta name="twitter:description" content={description} />
 		<meta name="twitter:image" content={new URL('/web-app-manifest-512x512.png', Astro.site)} />
+
+		<!-- JSON-LD Organization Schema -->
+		<script type="application/ld+json" is:inline set:html={JSON.stringify({
+			"@context": "https://schema.org",
+			"@type": "WebApplication",
+			"name": siteName,
+			"url": Astro.site,
+			"description": description,
+			"applicationCategory": "Entertainment",
+			"genre": "Movie Recommendations",
+			"operatingSystem": "All"
+		})} />
 
 		<script is:inline>
 			const getThemePreference = () => {
@@ -59,7 +86,8 @@ const { title, description = "Free Movie Suggestion - The ultimate tool for movi
 			}
 		</script>
 	</head>
-	<body class="selection:bg-ink selection:text-canvas">
+	<body class="selection:bg-link/20 selection:text-link transition-colors duration-300">
 		<slot />
 	</body>
 </html>
+

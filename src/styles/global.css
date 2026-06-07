@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* Colors */
+  /* Colors - 2026 Premium Noir Palette */
   --color-ink: var(--ink);
   --color-canvas: var(--canvas);
   --color-canvas-soft: var(--canvas-soft);
@@ -9,109 +9,106 @@
   --color-hairline: var(--hairline);
   --color-hairline-strong: var(--hairline-strong);
   --color-link: var(--link);
+  --color-link-hover: var(--link-hover);
   --color-body: var(--body);
   --color-mute: var(--mute);
+  --color-accent: #F5C518; /* Cinematic Gold */
+  --color-accent-red: #E50914; /* Netflix Red for urgency/hot picks */
 
-  /* Gradient Stops */
-  --color-gradient-develop-start: #007cf0;
-  --color-gradient-develop-end: #00dfd8;
-  --color-gradient-preview-start: #7928ca;
-  --color-gradient-preview-end: #ff0080;
-  --color-gradient-ship-start: #ff4d4d;
-  --color-gradient-ship-end: #f9cb28;
+  /* Advanced Gradients */
+  --color-gradient-primary: linear-gradient(135deg, #007cf0 0%, #00dfd8 100%);
+  --color-gradient-hot: linear-gradient(135deg, #ff4d4d 0%, #f9cb28 100%);
+  --color-gradient-deep: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%);
 
-  /* Fonts */
-  --font-sans: "Geist", "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  /* Typography */
+  --font-sans: "Inter Tight", "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Clash Display", "Playfair Display", serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", monospace;
 
-  /* Shadows (Level 3 - Soft Stack) */
-  --shadow-vercel: 0px 2px 2px #0000000a, 0px 8px 8px -8px #0000000a;
-  --shadow-vercel-lg: 0px 2px 2px #0000000a, 0px 8px 16px -4px #0000000a;
+  /* Shadows - 2026 Depth */
+  --shadow-premium: 0 0 0 1px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.05), 0 12px 24px rgba(0,0,0,0.05);
+  --shadow-premium-dark: 0 0 0 1px rgba(255,255,255,0.1), 0 10px 30px -10px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 20px rgba(50, 145, 255, 0.3);
 
   /* Spacing */
-  --spacing-section: 192px;
+  --spacing-section: 160px;
 
   /* Radius */
-  --radius-vercel-sm: 6px;
-  --radius-vercel-md: 8px;
-  --radius-vercel-lg: 12px;
-  --radius-vercel-pill: 100px;
+  --radius-premium: 14px;
+  --radius-pill: 9999px;
 }
 
 @layer base {
   :root {
     color-scheme: light;
-    --ink: #171717;
-    --canvas: #ffffff;
-    --canvas-soft: #fafafa;
-    --canvas-soft-2: #f5f5f5;
-    --hairline: #ebebeb;
-    --hairline-strong: #a1a1a1;
-    --link: #0070f3;
-    --body: #4d4d4d;
-    --mute: #888888;
+    --ink: #0F172A;
+    --canvas: #FFFFFF;
+    --canvas-soft: #F8FAFC;
+    --canvas-soft-2: #F1F5F9;
+    --hairline: #E2E8F0;
+    --hairline-strong: #94A3B8;
+    --link: #2563EB;
+    --link-hover: #1D4ED8;
+    --body: #475569;
+    --mute: #64748B;
   }
 
   .dark {
     color-scheme: dark;
-    --ink: #ededed;
-    --canvas: #000000;
-    --canvas-soft: #0a0a0a;
-    --canvas-soft-2: #111111;
-    --hairline: #333333;
-    --hairline-strong: #666666;
-    --link: #3291ff;
-    --body: #a1a1a1;
-    --mute: #666666;
+    --ink: #F8FAFC;
+    --canvas: #020617;
+    --canvas-soft: #0F172A;
+    --canvas-soft-2: #1E293B;
+    --hairline: #1E293B;
+    --hairline-strong: #334155;
+    --link: #38BDF8;
+    --link-hover: #7DD3FC;
+    --body: #94A3B8;
+    --mute: #64748B;
   }
 
   body {
-    @apply bg-canvas-soft text-ink font-sans antialiased;
+    @apply bg-canvas text-ink font-sans antialiased selection:bg-link/20 selection:text-link transition-colors duration-500;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-[-0.02em] text-wrap-balance;
+  h1, h2, h3 {
+    @apply font-display font-bold tracking-tight text-balance;
   }
 }
 
-@utility tracking-vercel {
-  letter-spacing: -0.05em;
+@utility btn-premium {
+  @apply relative inline-flex items-center justify-center overflow-hidden rounded-premium font-bold transition-all duration-300 active:scale-95 shadow-premium hover:shadow-glow;
 }
 
-@utility text-wrap-balance {
-  text-wrap: balance;
+@utility glass-2026 {
+  background: color-mix(in srgb, var(--canvas) 70%, transparent);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid var(--hairline);
 }
 
-@utility mesh-gradient {
-  background-image: 
-    radial-gradient(at 0% 0%, var(--color-gradient-develop-start) 0, transparent 50%),
-    radial-gradient(at 50% 0%, var(--color-gradient-preview-start) 0, transparent 50%),
-    radial-gradient(at 100% 0%, var(--color-gradient-ship-start) 0, transparent 50%);
-  background-size: 100% 100%;
+@utility bento-card {
+  @apply rounded-premium border border-hairline bg-canvas transition-all duration-500 hover:shadow-premium dark:hover:shadow-premium-dark hover:-translate-y-1;
+}
+
+@utility text-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: var(--color-gradient-primary);
 }
 
 @layer components {
-  .glass {
-    @apply bg-canvas/60 backdrop-blur-md border border-hairline/50;
+  .nav-link {
+    @apply relative px-3 py-2 text-sm font-medium text-body transition-colors hover:text-ink;
   }
-  .brand-logo-icon {
-    color: var(--color-canvas);
-    transition:
-      color 180ms ease,
-      background-color 180ms ease,
-      transform 180ms ease;
+  
+  .nav-link::after {
+    content: '';
+    @apply absolute bottom-0 left-3 right-3 h-0.5 scale-x-0 bg-link transition-transform duration-300;
   }
 
-  .brand-logo-icon svg {
-    stroke: currentColor;
-    stroke-width: 2.2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .group:hover .brand-logo-icon {
-    color: var(--color-link);
-    background-color: #111111;
-    transform: translateY(-1px);
+  .nav-link.active::after {
+    @apply scale-x-100;
   }
 }
+

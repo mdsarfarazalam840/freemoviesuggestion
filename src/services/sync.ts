@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { fetchMoviesByLanguage, fetchTrendingMovies, discoverMovies, fetchMovieFullDetails } from './tmdb';
 import { redis } from '../lib/redis';
-import { OTT_PLATFORMS } from '../data/movies';
+import { OTT_PLATFORMS, type MovieRegion } from '../data/movies';
 import fs from 'fs';
 import path from 'path';
 
@@ -28,20 +28,61 @@ const TMDB_GENRES = new Map<number, string>([
 ]);
 
 const PROGRESS_FILE = path.join(process.cwd(), '.sync-progress.json');
+const SYNC_SCHEMA_VERSION = 4;
+const TODAY = new Date().toISOString().slice(0, 10);
+const SYNC_FULL_DETAILS = process.env.SYNC_FULL_DETAILS === 'true';
 
-function getProgress() {
+type SyncProgress = {
+  version: number;
+  sourceIndex: number;
+  sourcePage: number;
+  totalSynced: number;
+};
+
+type SyncSource = {
+  name: string;
+  region?: MovieRegion;
+  filters: Record<string, string>;
+  maxPages: number;
+};
+
+const LANGUAGE_REGION_MAP: Record<string, MovieRegion> = {
+  en: 'Hollywood',
+  hi: 'Bollywood',
+  te: 'Tollywood',
+  ta: 'Kollywood',
+  ml: 'Mollywood',
+  kn: 'Sandalwood',
+  bn: 'Bengali',
+  mr: 'Marathi',
+  pa: 'Punjabi',
+  gu: 'Gujarati',
+};
+
+const PRIMARY_REGION_LANGUAGES = ['hi', 'te', 'ta', 'ml', 'kn', 'bn', 'mr', 'pa', 'gu', 'en'];
+const LATEST_REGION_LANGUAGES = ['hi', 'te', 'ta', 'ml', 'kn', 'bn', 'mr', 'pa', 'gu', 'en'];
+const GENRE_LANGUAGES = ['hi', 'te', 'ta', 'ml', 'kn', 'bn', 'mr', 'pa', 'gu'];
+const GLOBAL_GENRE_LANGUAGES = ['en'];
+
+function getProgress(): SyncProgress {
   if (fs.existsSync(PROGRESS_FILE)) {
     try {
-      return JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf-8'));
+      const progress = JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf-8'));
+      if (progress.version === SYNC_SCHEMA_VERSION) return progress;
     } catch (e) {
-      return { lastPage: 0, totalSynced: 0 };
+      return { version: SYNC_SCHEMA_VERSION, sourceIndex: 0, sourcePage: 1, totalSynced: 0 };
     }
   }
-  return { lastPage: 0, totalSynced: 0 };
+  return { version: SYNC_SCHEMA_VERSION, sourceIndex: 0, sourcePage: 1, totalSynced: 0 };
 }
 
-function saveProgress(page: number, totalSynced: number) {
-  fs.writeFileSync(PROGRESS_FILE, JSON.stringify({ lastPage: page, totalSynced }, null, 2));
+function saveProgress(sourceIndex: number, sourcePage: number, totalSynced: number) {
+  fs.writeFileSync(PROGRESS_FILE, JSON.stringify({
+    version: SYNC_SCHEMA_VERSION,
+    sourceIndex,
+    sourcePage,
+    totalSynced,
+  }, null, 2));
 }
 
 function slugify(value: string) {
@@ -53,7 +94,11 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, '');
 }
 
-function mapTmdbMovie(movie: any, region: 'Bollywood' | 'Hollywood' | 'Tollywood', index: number, isTop10 = false) {
+function getRegionForLanguage(language?: string): MovieRegion {
+  return LANGUAGE_REGION_MAP[language || ''] || 'Hollywood';
+}
+
+function mapTmdbMovie(movie: any, region: MovieRegion, index: number, isTop10 = false) {
   const title = movie.title || movie.name || `Movie ${movie.id}`;
   const releaseDate = movie.release_date || null;
   const movieSlug = `${slugify(title)}-${movie.id}`;
@@ -96,9 +141,104 @@ function mapTmdbMovie(movie: any, region: 'Bollywood' | 'Hollywood' | 'Tollywood
   };
 }
 
+function buildSyncSources(): SyncSource[] {
+  const sources: SyncSource[] = [];
+
+  for (const language of PRIMARY_REGION_LANGUAGES) {
+    sources.push({
+      name: `${language}-popular`,
+      region: getRegionForLanguage(language),
+      filters: {
+        with_original_language: language,
+        sort_by: 'popularity.desc',
+        include_adult: 'false',
+        'primary_release_date.lte': TODAY,
+        'vote_count.gte': '1',
+      },
+      maxPages: language === 'hi' ? 40 : 20,
+    });
+  }
+
+  for (const language of LATEST_REGION_LANGUAGES) {
+    sources.push({
+      name: `${language}-latest`,
+      region: getRegionForLanguage(language),
+      filters: {
+        with_original_language: language,
+        sort_by: 'primary_release_date.desc',
+        include_adult: 'false',
+        'primary_release_date.lte': TODAY,
+        'vote_count.gte': '1',
+      },
+      maxPages: language === 'hi' ? 35 : 15,
+    });
+  }
+
+  for (const [genreId, genreName] of TMDB_GENRES.entries()) {
+    const genreSlug = slugify(genreName);
+    for (const language of GENRE_LANGUAGES) {
+      sources.push({
+        name: `${language}-${genreSlug}-latest`,
+        region: getRegionForLanguage(language),
+        filters: {
+          with_original_language: language,
+          with_genres: String(genreId),
+          sort_by: 'primary_release_date.desc',
+          include_adult: 'false',
+          'primary_release_date.lte': TODAY,
+          'vote_count.gte': '1',
+        },
+        maxPages: language === 'hi' ? 3 : 2,
+      });
+    }
+
+    for (const language of GLOBAL_GENRE_LANGUAGES) {
+      sources.push({
+        name: `${language}-${genreSlug}-latest`,
+        region: getRegionForLanguage(language),
+        filters: {
+          with_original_language: language,
+          with_genres: String(genreId),
+          sort_by: 'primary_release_date.desc',
+          include_adult: 'false',
+          'primary_release_date.lte': TODAY,
+          'vote_count.gte': '5',
+        },
+        maxPages: 2,
+      });
+    }
+  }
+
+  sources.push(
+    {
+      name: 'global-popular',
+      filters: {
+        sort_by: 'popularity.desc',
+        include_adult: 'false',
+        'primary_release_date.lte': TODAY,
+      },
+      maxPages: 25,
+    },
+    {
+      name: 'global-latest',
+      filters: {
+        sort_by: 'primary_release_date.desc',
+        include_adult: 'false',
+        'primary_release_date.lte': TODAY,
+        'vote_count.gte': '1',
+      },
+      maxPages: 20,
+    },
+  );
+
+  return sources;
+}
+
 export async function syncMovies(targetCount = 1000) {
   const progress = getProgress();
-  let currentPage = progress.lastPage + 1;
+  const sources = buildSyncSources();
+  let sourceIndex = progress.sourceIndex;
+  let sourcePage = progress.sourcePage;
   let totalSynced = progress.totalSynced;
   
   const stats = {
@@ -108,14 +248,26 @@ export async function syncMovies(targetCount = 1000) {
     failed: 0
   };
 
-  console.log(`Starting/Resuming sync from page ${currentPage}, target: ${targetCount} movies.`);
+  console.log(`Starting/Resuming sync from source ${sourceIndex + 1}/${sources.length}, page ${sourcePage}, target: ${targetCount} movies.`);
 
-  while (totalSynced < targetCount) {
-    console.log(`Fetching TMDB page ${currentPage}...`);
-    const data = await discoverMovies(currentPage);
+  while (totalSynced < targetCount && sourceIndex < sources.length) {
+    const source = sources[sourceIndex];
+
+    if (sourcePage > source.maxPages) {
+      sourceIndex++;
+      sourcePage = 1;
+      saveProgress(sourceIndex, sourcePage, totalSynced);
+      continue;
+    }
+
+    console.log(`Fetching TMDB source "${source.name}" page ${sourcePage}/${source.maxPages}...`);
+    const data = await discoverMovies(sourcePage, source.filters);
     if (!data.results || data.results.length === 0) {
-      console.log('No more movies found on TMDB.');
-      break;
+      console.log(`No more movies found for source "${source.name}".`);
+      sourceIndex++;
+      sourcePage = 1;
+      saveProgress(sourceIndex, sourcePage, totalSynced);
+      continue;
     }
 
     const movieBatch = [];
@@ -130,17 +282,16 @@ export async function syncMovies(targetCount = 1000) {
 
       try {
         stats.fetched++;
-        const fullMovie = await fetchMovieFullDetails(basicMovie.id);
-        
-        let region: 'Hollywood' | 'Bollywood' | 'Tollywood' = 'Hollywood';
-        if (fullMovie.original_language === 'hi') region = 'Bollywood';
-        if (['te', 'ta', 'kn', 'ml'].includes(fullMovie.original_language)) region = 'Tollywood';
+        const movie = SYNC_FULL_DETAILS ? await fetchMovieFullDetails(basicMovie.id) : basicMovie;
+        const region = source.region || getRegionForLanguage(movie.original_language);
 
-        const mapped = mapTmdbMovie(fullMovie, region, totalSynced + movieBatch.length);
+        const mapped = mapTmdbMovie(movie, region, totalSynced + movieBatch.length);
         movieBatch.push(mapped);
         
-        // Increase delay to ~500ms to adhere to TMDB rate limits (approx 2 reqs/sec)
-        await new Promise(resolve => setTimeout(resolve, 500));
+        if (SYNC_FULL_DETAILS) {
+          // Keep detail mode conservative because it performs one extra TMDB request per movie.
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
       } catch (err) {
         console.error(`Failed to fetch details for movie ${basicMovie.id}:`, err);
         stats.failed++;
@@ -158,8 +309,8 @@ export async function syncMovies(targetCount = 1000) {
       }
     }
 
-    saveProgress(currentPage, totalSynced);
-    currentPage++;
+    sourcePage++;
+    saveProgress(sourceIndex, sourcePage, totalSynced);
     
     console.log(`Status: ${totalSynced}/${targetCount} movies processed. Stats:`, stats);
     
@@ -186,7 +337,14 @@ async function clearRedisCache() {
       'remote_movies:v5:trending:page:1:limit:24:top:1',
       'remote_movies:v5:page:page:1:limit:24:region:bollywood',
       'remote_movies:v5:page:page:1:limit:24:region:tollywood',
-      'remote_movies:v5:page:page:1:limit:24'
+      'remote_movies:v5:page:page:1:limit:24',
+      'remote_movies:v6:trending:page:1:limit:24:top:1',
+      'remote_movies:v6:page:page:1:limit:24:region:bollywood',
+      'remote_movies:v6:page:page:1:limit:24:region:tollywood',
+      'remote_movies:v6:page:page:1:limit:24:region:kollywood',
+      'remote_movies:v6:page:page:1:limit:24:region:mollywood',
+      'remote_movies:v6:page:page:1:limit:24:region:sandalwood',
+      'remote_movies:v6:page:page:1:limit:24'
     ];
     // Delete keys one by one as Redis.del might fail on non-existent keys depending on implementation
     for (const key of keys) {
@@ -198,10 +356,13 @@ async function clearRedisCache() {
 }
 
 export async function syncTrendingMovies() {
-  const [trendingData, bollywoodData, tollywoodData] = await Promise.all([
+  const [trendingData, bollywoodData, tollywoodData, kollywoodData, mollywoodData, sandalwoodData] = await Promise.all([
     fetchTrendingMovies(),
     fetchMoviesByLanguage('hi'),
     fetchMoviesByLanguage('te'),
+    fetchMoviesByLanguage('ta'),
+    fetchMoviesByLanguage('ml'),
+    fetchMoviesByLanguage('kn'),
   ]);
 
   const movieBatch = [];
@@ -240,6 +401,9 @@ export async function syncTrendingMovies() {
   movieBatch.push(...processResults(trendingData.results, 'Hollywood'));
   movieBatch.push(...processResults(bollywoodData.results, 'Bollywood'));
   movieBatch.push(...processResults(tollywoodData.results, 'Tollywood'));
+  movieBatch.push(...processResults(kollywoodData.results, 'Kollywood'));
+  movieBatch.push(...processResults(mollywoodData.results, 'Mollywood'));
+  movieBatch.push(...processResults(sandalwoodData.results, 'Sandalwood'));
 
   const { error } = await supabase.from('movies').upsert(movieBatch, { onConflict: 'tmdb_id' });
   if (error) throw error;

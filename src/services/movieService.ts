@@ -182,7 +182,7 @@ function movieCacheKey(prefix: string, options: MovieQueryOptions = {}) {
     options.topOnly ? 'top:1' : null,
   ].filter(Boolean);
 
-  return `remote_movies:v5:${parts.join(':')}`;
+  return `remote_movies:v6:${parts.join(':')}`;
 }
 
 async function fetchMoviePage(options: MovieQueryOptions = {}): Promise<MoviePage> {

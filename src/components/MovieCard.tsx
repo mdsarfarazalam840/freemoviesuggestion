@@ -15,12 +15,12 @@ export default function MovieCard({ movie, rank }: Props) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       whileHover={{ y: -5 }}
-      className="group relative flex flex-col glass rounded-vercel-md border border-hairline overflow-hidden transition-all duration-300 movie-card"
+      className="group relative flex flex-col glass-2026 rounded-premium border border-hairline overflow-hidden transition-all duration-300 movie-card"
     >
       <a href={`/movie/${movie.slug}`} className="absolute inset-0 z-10" aria-label={`View details for ${movie.title}`}></a>
       
       {rank && (
-        <div className="absolute top-2 left-2 z-20 flex h-8 w-8 items-center justify-center rounded-vercel-sm bg-ink/80 text-sm font-bold text-canvas backdrop-blur-sm pointer-events-none">
+        <div className="absolute top-2 left-2 z-20 flex h-8 w-8 items-center justify-center rounded-premium bg-ink/80 text-sm font-bold text-canvas backdrop-blur-sm pointer-events-none">
           {rank}
         </div>
       )}
@@ -70,7 +70,7 @@ export default function MovieCard({ movie, rank }: Props) {
             <a 
               key={platform.name}
               href={`/ott/${platform.name.toLowerCase().replace('+', 'plus').replace(' ', '-')}`}
-              className="inline-flex items-center rounded-vercel-pill bg-canvas-soft px-2 py-0.5 text-[10px] font-medium text-body border border-hairline hover:border-hairline-strong hover:bg-canvas-soft-2 transition-all"
+              className="inline-flex items-center rounded-pill bg-canvas-soft px-2 py-0.5 text-[10px] font-medium text-body border border-hairline hover:border-hairline-strong hover:bg-canvas-soft-2 transition-all"
             >
               {platform.name}
             </a>

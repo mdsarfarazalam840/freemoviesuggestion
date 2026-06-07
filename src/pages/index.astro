@@ -26,17 +26,19 @@ const tollywood = await getTollywoodMovies();
 		/>
 
 		<!-- Top 10 Section -->
-		<section class="py-20 bg-canvas">
+		<section class="py-24 bg-canvas">
 			<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div class="mb-12 flex items-end justify-between">
+				<div class="mb-16 flex items-end justify-between">
 					<div>
-						<h2 class="text-3xl font-bold tracking-tight text-ink">Top 10 Picks Today</h2>
-						<p class="mt-2 text-body">The most suggested movies across all platforms.</p>
+						<h2 class="text-4xl font-bold tracking-tight text-ink">Trending Hot Picks</h2>
+						<p class="mt-4 text-lg text-body">The most suggested movies across all platforms today.</p>
 					</div>
-					<a href="/movies" class="text-sm font-semibold text-link hover:underline">View all</a>
+					<a href="/movies" class="hidden sm:flex items-center gap-2 text-sm font-bold text-link hover:text-link-hover transition-colors">
+						View Full Catalog <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+					</a>
 				</div>
 
-				<div class="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+				<div class="grid grid-cols-2 gap-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 					{top10.map((movie) => (
 						<MovieCardAstro movie={movie} rank={movie.rank} />
 					))}
@@ -45,47 +47,62 @@ const tollywood = await getTollywoodMovies();
 		</section>
 
 		<!-- Regions Section -->
-		<section id="regions" class="py-20 bg-canvas-soft border-t border-hairline">
+		<section id="regions" class="py-24 bg-canvas-soft border-t border-hairline">
 			<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div class="space-y-24">
+				<div class="space-y-32">
 					<!-- Bollywood -->
 					<div>
-						<div class="mb-10 flex items-center justify-between">
-							<div class="flex items-center gap-3">
-								<div class="h-10 w-1 flex bg-gradient-ship-start rounded-full"></div>
-								<h2 class="text-2xl font-bold tracking-tight text-ink">Bollywood Excellence</h2>
+						<div class="mb-12 flex items-end justify-between">
+							<div class="flex items-center gap-4">
+								<div class="h-12 w-1.5 flex bg-accent rounded-full shadow-[0_0_15px_rgba(245,197,24,0.5)]"></div>
+								<div>
+									<h2 class="text-3xl font-bold tracking-tight text-ink">Bollywood Excellence</h2>
+									<p class="text-mute text-sm mt-1">Soulful stories and musical masterpieces.</p>
+								</div>
 							</div>
-							<a href="/region/bollywood" class="text-sm font-semibold text-body hover:text-ink">Browse Bollywood →</a>
+							<a href="/region/bollywood" class="group flex items-center gap-2 text-sm font-bold text-body hover:text-ink transition-all">
+								Browse All <span class="group-hover:translate-x-1 transition-transform">→</span>
+							</a>
 						</div>
-						<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+						<div class="grid grid-cols-2 gap-8 md:grid-cols-4">
 							{bollywood.map(movie => <MovieCardReact client:visible movie={movie} />)}
 						</div>
 					</div>
 
 					<!-- Hollywood -->
 					<div>
-						<div class="mb-10 flex items-center justify-between">
-							<div class="flex items-center gap-3">
-								<div class="h-10 w-1 flex bg-gradient-develop-start rounded-full"></div>
-								<h2 class="text-2xl font-bold tracking-tight text-ink">Hollywood Blockbusters</h2>
+						<div class="mb-12 flex items-end justify-between">
+							<div class="flex items-center gap-4">
+								<div class="h-12 w-1.5 flex bg-link rounded-full shadow-glow"></div>
+								<div>
+									<h2 class="text-3xl font-bold tracking-tight text-ink">Hollywood Blockbusters</h2>
+									<p class="text-mute text-sm mt-1">High-octane action and global spectacles.</p>
+								</div>
 							</div>
-							<a href="/region/hollywood" class="text-sm font-semibold text-body hover:text-ink">Browse Hollywood →</a>
+							<a href="/region/hollywood" class="group flex items-center gap-2 text-sm font-bold text-body hover:text-ink transition-all">
+								Browse All <span class="group-hover:translate-x-1 transition-transform">→</span>
+							</a>
 						</div>
-						<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+						<div class="grid grid-cols-2 gap-8 md:grid-cols-4">
 							{hollywood.map(movie => <MovieCardReact client:visible movie={movie} />)}
 						</div>
 					</div>
 
 					<!-- Tollywood -->
 					<div>
-						<div class="mb-10 flex items-center justify-between">
-							<div class="flex items-center gap-3">
-								<div class="h-10 w-1 flex bg-gradient-preview-start rounded-full"></div>
-								<h2 class="text-2xl font-bold tracking-tight text-ink">Tollywood Hits</h2>
+						<div class="mb-12 flex items-end justify-between">
+							<div class="flex items-center gap-4">
+								<div class="h-12 w-1.5 flex bg-accent-red rounded-full shadow-[0_0_15px_rgba(229,9,20,0.4)]"></div>
+								<div>
+									<h2 class="text-3xl font-bold tracking-tight text-ink">Tollywood Hits</h2>
+									<p class="text-mute text-sm mt-1">Mass-appeal entertainers and epic dramas.</p>
+								</div>
 							</div>
-							<a href="/region/tollywood" class="text-sm font-semibold text-body hover:text-ink">Browse Tollywood →</a>
+							<a href="/region/tollywood" class="group flex items-center gap-2 text-sm font-bold text-body hover:text-ink transition-all">
+								Browse All <span class="group-hover:translate-x-1 transition-transform">→</span>
+							</a>
 						</div>
-						<div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+						<div class="grid grid-cols-2 gap-8 md:grid-cols-4">
 							{tollywood.map(movie => <MovieCardReact client:visible movie={movie} />)}
 						</div>
 					</div>
@@ -94,19 +111,19 @@ const tollywood = await getTollywoodMovies();
 		</section>
 
 		<!-- Genres Section -->
-		<section id="genres" class="py-20 bg-canvas border-t border-hairline">
+		<section id="genres" class="py-24 bg-canvas border-t border-hairline">
 			<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div class="mb-12">
-					<h2 class="text-3xl font-bold tracking-tight text-ink">Popular Genres</h2>
-					<p class="mt-2 text-body">Find movies in your favorite categories.</p>
+				<div class="mb-16 text-center">
+					<h2 class="text-4xl font-bold tracking-tight text-ink">Popular Genres</h2>
+					<p class="mt-4 text-lg text-body">Instant discovery across your favorite categories.</p>
 				</div>
 				<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
 					{GENRES.map(genre => (
 						<a 
 							href={`/genre/${genre.toLowerCase()}`}
-							class="flex flex-col items-center justify-center p-6 bg-canvas border border-hairline rounded-vercel-lg hover:border-hairline-strong hover:shadow-vercel transition-all group"
+							class="group bento-card flex flex-col items-center justify-center p-8 hover:bg-link hover:border-link transition-all"
 						>
-							<span class="text-sm font-semibold text-ink group-hover:text-link">{genre}</span>
+							<span class="text-base font-bold text-ink group-hover:text-white">{genre}</span>
 						</a>
 					))}
 				</div>
@@ -124,9 +141,9 @@ const tollywood = await getTollywoodMovies();
 					{OTT_PLATFORMS.map(ott => (
 						<a 
 							href={`/ott/${ott.name.toLowerCase().replace('+', 'plus').replace(' ', '-')}`}
-							class="flex flex-col items-center justify-center p-6 bg-canvas border border-hairline rounded-vercel-lg hover:border-hairline-strong hover:shadow-vercel transition-all group"
+							class="group bento-card flex flex-col items-center justify-center p-8 hover:bg-link hover:border-link transition-all"
 						>
-							<span class="text-sm font-semibold text-ink group-hover:text-link">{ott.name}</span>
+							<span class="text-base font-bold text-ink group-hover:text-white">{ott.name}</span>
 						</a>
 					))}
 				</div>
@@ -144,7 +161,7 @@ const tollywood = await getTollywoodMovies();
 					<div class="mt-10 flex items-center justify-center gap-x-6">
 						<a 
 							href="/movies" 
-							class="rounded-vercel-pill bg-canvas px-8 py-3.5 text-sm font-semibold text-ink shadow-sm hover:bg-canvas-soft transition-all"
+							class="rounded-pill bg-canvas px-8 py-3.5 text-sm font-semibold text-ink shadow-sm hover:bg-canvas-soft transition-all"
 						>
 							Start Browsing
 						</a>

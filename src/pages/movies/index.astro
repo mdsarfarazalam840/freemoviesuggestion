@@ -60,14 +60,14 @@ const buildPageHref = (nextPage: number) => {
             <div class="flex flex-wrap md:flex-col gap-2">
               <a 
                 href={`/movies${selectedOtt ? `?ott=${encodeURIComponent(selectedOtt)}` : ''}`} 
-                class={`px-3 py-1.5 text-sm rounded-vercel-pill border transition-all ${!selectedGenre ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+                class={`px-3 py-1.5 text-sm rounded-pill border transition-all ${!selectedGenre ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
               >
                 All Genres
               </a>
               {GENRES.map(genre => (
                 <a 
                   href={`/movies?genre=${encodeURIComponent(genre)}${selectedOtt ? `&ott=${encodeURIComponent(selectedOtt)}` : ''}`} 
-                  class={`px-3 py-1.5 text-sm rounded-vercel-pill border transition-all ${selectedGenre?.toLowerCase() === genre.toLowerCase() ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+                  class={`px-3 py-1.5 text-sm rounded-pill border transition-all ${selectedGenre?.toLowerCase() === genre.toLowerCase() ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
                 >
                   {genre}
                 </a>
@@ -80,14 +80,14 @@ const buildPageHref = (nextPage: number) => {
             <div class="flex flex-wrap md:flex-col gap-2">
               <a 
                 href={`/movies${selectedGenre ? `?genre=${encodeURIComponent(selectedGenre)}` : ''}`} 
-                class={`px-3 py-1.5 text-sm rounded-vercel-pill border transition-all ${!selectedOtt ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+                class={`px-3 py-1.5 text-sm rounded-pill border transition-all ${!selectedOtt ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
               >
                 All Platforms
               </a>
               {OTT_PLATFORMS.map(ott => (
                 <a 
                   href={`/movies?ott=${encodeURIComponent(ott.name)}${selectedGenre ? `&genre=${encodeURIComponent(selectedGenre)}` : ''}`} 
-                  class={`px-3 py-1.5 text-sm rounded-vercel-pill border transition-all ${selectedOtt?.toLowerCase() === ott.name.toLowerCase() ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+                  class={`px-3 py-1.5 text-sm rounded-pill border transition-all ${selectedOtt?.toLowerCase() === ott.name.toLowerCase() ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
                 >
                   {ott.name}
                 </a>
@@ -114,11 +114,18 @@ const buildPageHref = (nextPage: number) => {
             )}
           </div>
 
+          {filteredMovies.length > 0 ? (
           <div id="movie-grid" class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
             {filteredMovies.map(movie => <MovieCardReact client:visible movie={movie} />)}
           </div>
+          ) : (
+          <div id="no-results" class="py-24 text-center">
+            <p class="text-lg text-body">No movies found matching your filters.</p>
+            <a href="/movies" class="mt-4 inline-block text-link font-medium hover:underline">Reset filters</a>
+          </div>
+          )}
 
-          {pageData.totalPages > 1 && (
+          {filteredMovies.length > 0 && pageData.totalPages > 1 && (
             <nav class="mt-10 flex items-center justify-between border-t border-hairline pt-6" aria-label="Pagination">
               <a
                 href={buildPageHref(pageData.page - 1)}
@@ -142,10 +149,7 @@ const buildPageHref = (nextPage: number) => {
             </nav>
           )}
 
-          <div id="no-results" class="hidden py-24 text-center">
-            <p class="text-lg text-body">No movies found matching your filters.</p>
-            <a href="/movies" class="mt-4 inline-block text-link font-medium hover:underline">Reset filters</a>
-          </div>
+
         </div>
       </div>
     </div>
