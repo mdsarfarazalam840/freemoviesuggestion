@@ -1,0 +1,39 @@
+name: Daily Movie Sync
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Daily at midnight UTC
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore sync progress
+        uses: actions/cache@v4
+        with:
+          path: .sync-progress.json
+          key: sync-progress-${{ github.run_id }}
+          restore-keys: |
+            sync-progress-
+
+      - name: Run sync
+        env:
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TMDB_ACCESS_TOKEN: ${{ secrets.TMDB_ACCESS_TOKEN }}
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+        run: npm run sync

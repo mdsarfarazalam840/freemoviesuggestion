@@ -6,7 +6,7 @@ export interface Movie {
   rating: number;
   description: string;
   releaseYear: number;
-  region: 'Bollywood' | 'Hollywood' | 'Tollywood';
+  region: MovieRegion;
   genres: string[];
   ottPlatforms: OTTPlatform[];
   isTop10?: boolean;
@@ -20,10 +20,40 @@ export interface OTTPlatform {
 }
 
 export const GENRES = [
-  'Action', 'Drama', 'Comedy', 'Sci-Fi', 'Horror', 'Romance', 'Thriller', 'Animation', 'Crime'
+  'Action',
+  'Adventure',
+  'Animation',
+  'Comedy',
+  'Crime',
+  'Documentary',
+  'Drama',
+  'Family',
+  'Fantasy',
+  'History',
+  'Horror',
+  'Music',
+  'Mystery',
+  'Romance',
+  'Sci-Fi',
+  'Thriller',
+  'War',
+  'Western',
 ];
 
-export const REGIONS = ['Bollywood', 'Hollywood', 'Tollywood'];
+export const REGIONS = [
+  'Bollywood',
+  'Hollywood',
+  'Tollywood',
+  'Kollywood',
+  'Mollywood',
+  'Sandalwood',
+  'Bengali',
+  'Marathi',
+  'Punjabi',
+  'Gujarati',
+] as const;
+
+export type MovieRegion = (typeof REGIONS)[number];
 
 export const OTT_PLATFORMS: OTTPlatform[] = [
   { name: 'Netflix', logo: '/icons/netflix.svg', url: 'https://netflix.com' },

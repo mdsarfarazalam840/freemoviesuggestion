@@ -1,6 +1,6 @@
 {
-  "name": "FreeMovieRecommendation",
-  "short_name": "MovieRec",
+  "name": "Free Movie Suggestion",
+  "short_name": "FreeMovie",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
