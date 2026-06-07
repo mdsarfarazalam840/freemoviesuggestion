@@ -2,8 +2,6 @@ import { supabase } from '../lib/supabase';
 import { fetchMoviesByLanguage, fetchTrendingMovies, discoverMovies, fetchMovieFullDetails } from './tmdb';
 import { redis } from '../lib/redis';
 import { OTT_PLATFORMS, type MovieRegion } from '../data/movies';
-import fs from 'fs';
-import path from 'path';
 
 const TMDB_GENRES = new Map<number, string>([
   [28, 'Action'],
@@ -27,7 +25,6 @@ const TMDB_GENRES = new Map<number, string>([
   [37, 'Western'],
 ]);
 
-const PROGRESS_FILE = path.join(process.cwd(), '.sync-progress.json');
 const SYNC_SCHEMA_VERSION = 4;
 const TODAY = new Date().toISOString().slice(0, 10);
 const SYNC_FULL_DETAILS = process.env.SYNC_FULL_DETAILS === 'true';
@@ -64,25 +61,29 @@ const LATEST_REGION_LANGUAGES = ['hi', 'te', 'ta', 'ml', 'kn', 'bn', 'mr', 'pa',
 const GENRE_LANGUAGES = ['hi', 'te', 'ta', 'ml', 'kn', 'bn', 'mr', 'pa', 'gu'];
 const GLOBAL_GENRE_LANGUAGES = ['en'];
 
-function getProgress(): SyncProgress {
-  if (fs.existsSync(PROGRESS_FILE)) {
-    try {
-      const progress = JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf-8'));
-      if (progress.version === SYNC_SCHEMA_VERSION) return progress;
-    } catch (e) {
-      return { version: SYNC_SCHEMA_VERSION, sourceIndex: 0, sourcePage: 1, totalSynced: 0 };
-    }
+const SYNC_PROGRESS_KEY = 'sync_progress';
+
+async function getProgress(): Promise<SyncProgress> {
+  try {
+    const progress: SyncProgress | null = await redis.get(SYNC_PROGRESS_KEY);
+    if (progress && progress.version === SYNC_SCHEMA_VERSION) return progress;
+  } catch (e) {
+    console.error('Failed to get progress from Redis:', e);
   }
   return { version: SYNC_SCHEMA_VERSION, sourceIndex: 0, sourcePage: 1, totalSynced: 0 };
 }
 
-function saveProgress(sourceIndex: number, sourcePage: number, totalSynced: number) {
-  fs.writeFileSync(PROGRESS_FILE, JSON.stringify({
-    version: SYNC_SCHEMA_VERSION,
-    sourceIndex,
-    sourcePage,
-    totalSynced,
-  }, null, 2));
+async function saveProgress(sourceIndex: number, sourcePage: number, totalSynced: number) {
+  try {
+    await redis.set(SYNC_PROGRESS_KEY, {
+      version: SYNC_SCHEMA_VERSION,
+      sourceIndex,
+      sourcePage,
+      totalSynced,
+    });
+  } catch (e) {
+    console.error('Failed to save progress to Redis:', e);
+  }
 }
 
 function slugify(value: string) {
@@ -235,7 +236,7 @@ function buildSyncSources(): SyncSource[] {
 }
 
 export async function syncMovies(targetCount = 1000) {
-  const progress = getProgress();
+  const progress = await getProgress();
   const sources = buildSyncSources();
   let sourceIndex = progress.sourceIndex;
   let sourcePage = progress.sourcePage;
@@ -256,7 +257,7 @@ export async function syncMovies(targetCount = 1000) {
     if (sourcePage > source.maxPages) {
       sourceIndex++;
       sourcePage = 1;
-      saveProgress(sourceIndex, sourcePage, totalSynced);
+      await saveProgress(sourceIndex, sourcePage, totalSynced);
       continue;
     }
 
@@ -266,7 +267,7 @@ export async function syncMovies(targetCount = 1000) {
       console.log(`No more movies found for source "${source.name}".`);
       sourceIndex++;
       sourcePage = 1;
-      saveProgress(sourceIndex, sourcePage, totalSynced);
+      await saveProgress(sourceIndex, sourcePage, totalSynced);
       continue;
     }
 
@@ -310,7 +311,7 @@ export async function syncMovies(targetCount = 1000) {
     }
 
     sourcePage++;
-    saveProgress(sourceIndex, sourcePage, totalSynced);
+    await saveProgress(sourceIndex, sourcePage, totalSynced);
     
     console.log(`Status: ${totalSynced}/${targetCount} movies processed. Stats:`, stats);
     
