@@ -4,6 +4,8 @@ import { getCachedData, setCachedData } from '../../../services/cache';
 
 const CACHE_TTL = 86400; // 24 hours
 
+export const prerender = false;
+
 export const GET: APIRoute = async ({ params }) => {
   const { id } = params;
   if (!id) return new Response('Missing id', { status: 400 });

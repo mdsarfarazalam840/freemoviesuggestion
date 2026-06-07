@@ -1,4 +1,14 @@
-import { syncMovies, syncTrendingMovies } from './services/sync';
+import { syncMovies, syncTrendingMovies } from '../src/services/sync';
+
+interface ScheduledEvent {
+  cron: string;
+  scheduledTime: number;
+}
+
+interface ExecutionContext {
+  waitUntil(promise: Promise<any>): void;
+  passThroughOnException(): void;
+}
 
 export default {
   async scheduled(event: ScheduledEvent, env: any, ctx: ExecutionContext) {

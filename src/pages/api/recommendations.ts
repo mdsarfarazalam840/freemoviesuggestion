@@ -4,6 +4,8 @@ import { getCachedData, setCachedData } from '../../services/cache';
 
 const CACHE_TTL = 86400; // 24 hours
 
+export const prerender = false;
+
 export const GET: APIRoute = async ({ url }) => {
   const movieId = url.searchParams.get('movieId');
   const limit = parseInt(url.searchParams.get('limit') || '6', 10);
