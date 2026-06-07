@@ -1,0 +1,77 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout 
+  title="Privacy Policy"
+  description="Privacy Policy for Free Movie Suggestion. Learn how we handle your data."
+>
+  <Navbar />
+  <main class="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+    <div class="max-w-none">
+      <h1 class="text-4xl font-bold tracking-tight text-ink sm:text-5xl">Privacy Policy</h1>
+      <p class="mt-6 text-xl text-body leading-relaxed">
+        Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+      </p>
+
+      <section class="mt-12 space-y-8">
+        <div>
+          <h2 class="text-2xl font-semibold text-ink">Introduction</h2>
+          <p class="mt-4 text-body leading-relaxed">
+            Welcome to Free Movie Suggestion. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we look after your personal data when you visit our website and tell you about your privacy rights and how the law protects you.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-semibold text-ink">Data We Collect</h2>
+          <p class="mt-4 text-body leading-relaxed">
+            We do not require you to create an account or provide personal information to use our movie suggestion service. However, we may collect certain non-personal information automatically:
+          </p>
+          <ul class="mt-4 list-disc pl-6 space-y-2 text-body">
+            <li>Usage Data: Information about how you use our website, such as search queries and pages visited.</li>
+            <li>Technical Data: IP address, browser type and version, time zone setting and location, and browser plug-in types and versions.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-semibold text-ink">How We Use Your Data</h2>
+          <p class="mt-4 text-body leading-relaxed">
+            We use the collected data to:
+          </p>
+          <ul class="mt-4 list-disc pl-6 space-y-2 text-body">
+            <li>Provide and maintain our service.</li>
+            <li>Improve our website and recommendation engine.</li>
+            <li>Monitor the usage of our service to prevent technical issues.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-semibold text-ink">Cookies</h2>
+          <p class="mt-4 text-body leading-relaxed">
+            We use cookies and similar tracking technologies to track the activity on our service and hold certain information. Cookies are files with a small amount of data which may include an anonymous unique identifier.
+          </p>
+          <p class="mt-4 text-body leading-relaxed">
+            You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent. However, if you do not accept cookies, you may not be able to use some portions of our service.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-semibold text-ink">Third-Party Services</h2>
+          <p class="mt-4 text-body leading-relaxed">
+            We may use third-party service providers to monitor and analyze the use of our service, such as Google Analytics. These third parties have their own privacy policies addressing how they use such information.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-semibold text-ink">Contact Us</h2>
+          <p class="mt-4 text-body leading-relaxed">
+            If you have any questions about this Privacy Policy, please contact us through our <a href="/contact" class="text-ink underline decoration-hairline underline-offset-4 hover:decoration-ink transition-all">contact page</a>.
+          </p>
+        </div>
+      </section>
+    </div>
+  </main>
+  <Footer />
+</Layout>

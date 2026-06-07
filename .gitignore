@@ -28,3 +28,8 @@ pnpm-debug.log*
 .gemini/
 .vscode/
 skills-lock.json
+
+graphify-*/
+.opencode/
+
+.wrangler/

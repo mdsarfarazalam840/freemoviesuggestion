@@ -1,0 +1,72 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout 
+  title="Terms & Conditions"
+  description="Terms and Conditions for using Free Movie Suggestion."
+>
+  <Navbar />
+  <main class="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+    <div class="max-w-none">
+      <h1 class="text-4xl font-bold tracking-tight text-ink sm:text-5xl">Terms & Conditions</h1>
+      <p class="mt-6 text-xl text-body leading-relaxed">
+        Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+      </p>
+
+      <section class="mt-12 space-y-8">
+        <div>
+          <h2 class="text-2xl font-semibold text-ink">Agreement to Terms</h2>
+          <p class="mt-4 text-body leading-relaxed">
+            By accessing or using Free Movie Suggestion, you agree to be bound by these Terms & Conditions. If you disagree with any part of the terms, then you may not access the service.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-semibold text-ink">Use of Service</h2>
+          <p class="mt-4 text-body leading-relaxed">
+            Our service provides movie suggestions and information about where to watch movies. This information is provided for general informational purposes only. While we strive to provide accurate and up-to-date information, we make no representations or warranties of any kind about the completeness, accuracy, or reliability of the information.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-semibold text-ink">Intellectual Property</h2>
+          <p class="mt-4 text-body leading-relaxed">
+            The service and its original content, features, and functionality are and will remain the exclusive property of Free Movie Suggestion and its licensors. Movie titles, posters, and descriptions are the property of their respective copyright holders.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-semibold text-ink">Links to Other Websites</h2>
+          <p class="mt-4 text-body leading-relaxed">
+            Our service may contain links to third-party websites or services (like Netflix, Prime Video, etc.) that are not owned or controlled by Free Movie Suggestion. We have no control over, and assume no responsibility for, the content, privacy policies, or practices of any third-party websites or services.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-semibold text-ink">Limitation of Liability</h2>
+          <p class="mt-4 text-body leading-relaxed">
+            In no event shall Free Movie Suggestion be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the service.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-semibold text-ink">Changes</h2>
+          <p class="mt-4 text-body leading-relaxed">
+            We reserve the right, at our sole discretion, to modify or replace these Terms at any time. We will try to provide at least 30 days' notice prior to any new terms taking effect.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-semibold text-ink">Contact Us</h2>
+          <p class="mt-4 text-body leading-relaxed">
+            If you have any questions about these Terms, please contact us.
+          </p>
+        </div>
+      </section>
+    </div>
+  </main>
+  <Footer />
+</Layout>
