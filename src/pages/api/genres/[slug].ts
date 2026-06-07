@@ -4,6 +4,8 @@ import { getCachedData, setCachedData } from '../../../services/cache';
 
 const CACHE_TTL = 3600; // 1 hour
 
+export const prerender = false;
+
 export const GET: APIRoute = async ({ params, url }) => {
   const { slug } = params;
   const page = parseInt(url.searchParams.get('page') || '1', 10);
