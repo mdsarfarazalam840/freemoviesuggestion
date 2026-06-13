@@ -1,0 +1,125 @@
+# GitLab CI/CD Pipeline — Astro + Cloudflare Pages
+# Required CI/CD Variables (Settings > CI/CD > Variables):
+#   CLOUDFLARE_API_TOKEN   — Cloudflare API token with "Cloudflare Pages:Edit" permission
+#   CLOUDFLARE_ACCOUNT_ID  — Your Cloudflare account ID
+#   SUPABASE_URL           — Supabase project URL
+#   SUPABASE_KEY           — Supabase anon/public key
+#   UPSTASH_REDIS_REST_URL — Upstash Redis REST URL
+#   UPSTASH_REDIS_REST_TOKEN — Upstash Redis REST token
+#   TMDB_API_KEY           — TMDB API key
+
+default:
+  image: node:22-alpine
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - node_modules/
+    policy: pull
+
+stages:
+  - install
+  - test
+  - build
+  - deploy
+
+# ─── Install ────────────────────────────────────────────────────────────────
+install:deps:
+  stage: install
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - node_modules/
+    policy: pull-push
+  script:
+    - npm ci --prefer-offline
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_COMMIT_BRANCH =~ /^(main|master|develop)$/'
+
+# ─── Test ───────────────────────────────────────────────────────────────────
+test:typecheck:
+  stage: test
+  needs: [install:deps]
+  script:
+    - npx astro check
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_COMMIT_BRANCH =~ /^(main|master|develop)$/'
+
+# ─── Build ──────────────────────────────────────────────────────────────────
+build:astro:
+  stage: build
+  needs: [test:typecheck]
+  variables:
+    # Expose env vars needed at build time (Astro SSR reads these server-side)
+    SUPABASE_URL: $SUPABASE_URL
+    SUPABASE_KEY: $SUPABASE_KEY
+    UPSTASH_REDIS_REST_URL: $UPSTASH_REDIS_REST_URL
+    UPSTASH_REDIS_REST_TOKEN: $UPSTASH_REDIS_REST_TOKEN
+    TMDB_API_KEY: $TMDB_API_KEY
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 hour
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_COMMIT_BRANCH =~ /^(main|master|develop)$/'
+
+# ─── Deploy: Preview (MR only) ──────────────────────────────────────────────
+deploy:preview:
+  stage: deploy
+  needs: [build:astro]
+  image: node:22-alpine
+  variables:
+    CLOUDFLARE_API_TOKEN: $CLOUDFLARE_API_TOKEN
+    CLOUDFLARE_ACCOUNT_ID: $CLOUDFLARE_ACCOUNT_ID
+  script:
+    - npx wrangler pages deploy dist/ --project-name=freemoviesuggestion --branch=$CI_COMMIT_REF_SLUG
+  environment:
+    name: preview/$CI_COMMIT_REF_SLUG
+    url: https://$CI_COMMIT_REF_SLUG.freemoviesuggestion.pages.dev
+    on_stop: deploy:preview:stop
+    auto_stop_in: 7 days
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+deploy:preview:stop:
+  stage: deploy
+  needs: []
+  variables:
+    GIT_STRATEGY: none
+    CLOUDFLARE_API_TOKEN: $CLOUDFLARE_API_TOKEN
+    CLOUDFLARE_ACCOUNT_ID: $CLOUDFLARE_ACCOUNT_ID
+  script:
+    - echo "Preview environment stopped — Cloudflare Pages auto-expires the deployment."
+  environment:
+    name: preview/$CI_COMMIT_REF_SLUG
+    action: stop
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: manual
+
+# ─── Deploy: Production (main branch only) ──────────────────────────────────
+deploy:production:
+  stage: deploy
+  needs: [build:astro]
+  image: node:22-alpine
+  variables:
+    CLOUDFLARE_API_TOKEN: $CLOUDFLARE_API_TOKEN
+    CLOUDFLARE_ACCOUNT_ID: $CLOUDFLARE_ACCOUNT_ID
+  script:
+    - npx wrangler pages deploy dist/ --project-name=freemoviesuggestion --branch=main
+  environment:
+    name: production
+    url: https://freemoviesuggestion.com
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
