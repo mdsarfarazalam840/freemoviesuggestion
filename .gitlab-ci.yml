@@ -13,8 +13,11 @@
 # stripped out when the cache is created on one runner and restored on another.
 # Running `npm ci` fresh in every job is the only reliable approach.
 
+# IMPORTANT: Must use node:22 (Debian/glibc) NOT node:22-alpine (musl libc).
+# @astrojs/cloudflare depends on @cloudflare/workerd-linux-64 which is a
+# glibc binary and will not run on Alpine Linux.
 default:
-  image: node:22-alpine
+  image: node:22
 
 stages:
   - test
