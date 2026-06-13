@@ -1,0 +1,6 @@
+name = "movie-sync-worker"
+main = "./index.ts"
+compatibility_date = "2026-06-07"
+
+[triggers]
+crons = ["0 0 * * *"] # Runs daily at 12AM UTC

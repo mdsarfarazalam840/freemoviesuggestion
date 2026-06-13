@@ -1,0 +1,41 @@
+{
+  "name": "freemoviesuggestion",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "overrides": {
+    "vite": "^7.3.1"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "sync": "node --use-system-ca --import tsx scripts/run-sync.ts",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/cloudflare": "^13.6.0",
+    "@astrojs/node": "^10.1.2",
+    "@astrojs/react": "^5.0.6",
+    "@supabase/supabase-js": "^2.106.2",
+    "@tailwindcss/vite": "^4.3.0",
+    "@upstash/redis": "^1.38.0",
+    "astro": "^6.4.2",
+    "dotenv": "^17.4.2",
+    "framer-motion": "^12.40.0",
+    "gsap": "^3.15.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.22.4",
+    "wrangler": "^4.98.0"
+  }
+}

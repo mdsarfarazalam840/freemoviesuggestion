@@ -1,0 +1,221 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import MovieCardReact from '../../components/MovieCard.tsx';
+import Footer from '../../components/Footer.astro';
+import { getMoviesPage } from '../../services/movieService';
+import { GENRES, OTT_PLATFORMS } from '../../data/movies';
+
+export const prerender = false;
+
+const page = Number(Astro.url.searchParams.get('page') || '1');
+const selectedGenre = Astro.url.searchParams.get('genre');
+const selectedOtt = Astro.url.searchParams.get('ott');
+const pageData = await getMoviesPage({ page, limit: 24, genre: selectedGenre, ott: selectedOtt });
+const filteredMovies = pageData.movies;
+const buildPageHref = (nextPage: number) => {
+  const params = new URLSearchParams();
+  if (selectedGenre) params.set('genre', selectedGenre);
+  if (selectedOtt) params.set('ott', selectedOtt);
+  if (nextPage > 1) params.set('page', String(nextPage));
+  const query = params.toString();
+  return query ? `/movies?${query}` : '/movies';
+};
+---
+
+<Layout title="All Movies">
+  <script type="application/ld+json" is:inline set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": Astro.site
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Movies",
+        "item": new URL('/movies', Astro.site)
+      }
+    ]
+  })} />
+  <Navbar />
+  <main class="min-h-screen bg-canvas-soft">
+    <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <nav class="flex mb-8" aria-label="Breadcrumb">
+        <ol class="flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-mute">
+          <li><a href="/" class="hover:text-ink">Home</a></li>
+          <li><span class="mx-2">/</span></li>
+          <li class="text-ink">Movies</li>
+        </ol>
+      </nav>
+      <div class="flex flex-col md:flex-row gap-12">
+        <!-- Sidebar Filters -->
+        <aside class="w-full md:w-64 space-y-10">
+          <div>
+            <h3 class="text-xs font-mono font-medium uppercase tracking-widest text-mute mb-4">Genres</h3>
+            <div class="flex flex-wrap md:flex-col gap-2">
+              <a 
+                href={`/movies${selectedOtt ? `?ott=${encodeURIComponent(selectedOtt)}` : ''}`} 
+                class={`px-3 py-1.5 text-sm rounded-pill border transition-all ${!selectedGenre ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+              >
+                All Genres
+              </a>
+              {GENRES.map(genre => (
+                <a 
+                  href={`/movies?genre=${encodeURIComponent(genre)}${selectedOtt ? `&ott=${encodeURIComponent(selectedOtt)}` : ''}`} 
+                  class={`px-3 py-1.5 text-sm rounded-pill border transition-all ${selectedGenre?.toLowerCase() === genre.toLowerCase() ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+                >
+                  {genre}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xs font-mono font-medium uppercase tracking-widest text-mute mb-4">OTT Platforms</h3>
+            <div class="flex flex-wrap md:flex-col gap-2">
+              <a 
+                href={`/movies${selectedGenre ? `?genre=${encodeURIComponent(selectedGenre)}` : ''}`} 
+                class={`px-3 py-1.5 text-sm rounded-pill border transition-all ${!selectedOtt ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+              >
+                All Platforms
+              </a>
+              {OTT_PLATFORMS.map(ott => (
+                <a 
+                  href={`/movies?ott=${encodeURIComponent(ott.name)}${selectedGenre ? `&genre=${encodeURIComponent(selectedGenre)}` : ''}`} 
+                  class={`px-3 py-1.5 text-sm rounded-pill border transition-all ${selectedOtt?.toLowerCase() === ott.name.toLowerCase() ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+                >
+                  {ott.name}
+                </a>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        <!-- Movie Grid -->
+        <div class="flex-1">
+          <div class="mb-8 flex items-center justify-between">
+            <h1 class="text-2xl font-bold tracking-tight text-ink">
+              <span id="filter-title">
+                { (selectedGenre && selectedOtt) 
+                  ? `${selectedGenre} Movies on ${selectedOtt}` 
+                  : (selectedGenre ? `${selectedGenre} Movies` : (selectedOtt ? `Movies on ${selectedOtt}` : 'All Movies')) 
+                }
+              </span>
+              <span class="ml-2 text-sm font-normal text-mute">(<span id="results-count">{pageData.count}</span> results)</span>
+            </h1>
+            
+            { (selectedGenre || selectedOtt) && (
+              <a href="/movies" class="text-sm font-medium text-link hover:underline">Clear all filters</a>
+            )}
+          </div>
+
+          {filteredMovies.length > 0 ? (
+          <div id="movie-grid" class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+            {filteredMovies.map(movie => <MovieCardReact client:visible movie={movie} />)}
+          </div>
+          ) : (
+          <div id="no-results" class="py-24 text-center">
+            <p class="text-lg text-body">No movies found matching your filters.</p>
+            <a href="/movies" class="mt-4 inline-block text-link font-medium hover:underline">Reset filters</a>
+          </div>
+          )}
+
+          {filteredMovies.length > 0 && pageData.totalPages > 1 && (
+            <nav class="mt-10 flex items-center justify-between border-t border-hairline pt-6" aria-label="Pagination">
+              <a
+                href={buildPageHref(pageData.page - 1)}
+                class:list={[
+                  'text-sm font-medium text-link hover:underline',
+                  pageData.page <= 1 && 'pointer-events-none opacity-40',
+                ]}
+              >
+                Previous
+              </a>
+              <span class="text-sm text-mute">Page {pageData.page} of {pageData.totalPages}</span>
+              <a
+                href={buildPageHref(pageData.page + 1)}
+                class:list={[
+                  'text-sm font-medium text-link hover:underline',
+                  pageData.page >= pageData.totalPages && 'pointer-events-none opacity-40',
+                ]}
+              >
+                Next
+              </a>
+            </nav>
+          )}
+
+
+        </div>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  function updateUI() {
+    const url = new URL(window.location.href);
+    const movieCards = document.querySelectorAll('.movie-card');
+    const resultsCount = document.getElementById('results-count');
+    const filterTitle = document.getElementById('filter-title');
+
+    // Update count
+    if (resultsCount) resultsCount.textContent = movieCards.length.toString();
+
+    // Update title
+    if (filterTitle) {
+      const activeGenre = url.searchParams.get('genre');
+      const activeOtt = url.searchParams.get('ott');
+      
+      if (activeGenre && activeOtt) {
+        filterTitle.textContent = `${activeGenre} Movies on ${activeOtt}`;
+      } else if (activeGenre) {
+        filterTitle.textContent = `${activeGenre} Movies`;
+      } else if (activeOtt) {
+        filterTitle.textContent = `Movies on ${activeOtt}`;
+      } else {
+        filterTitle.textContent = 'All Movies';
+      }
+    }
+
+    // Update active states of filter links
+    const filterLinks = document.querySelectorAll('aside a');
+    filterLinks.forEach((link) => {
+      const linkUrl = new URL((link as HTMLAnchorElement).href, window.location.origin);
+      const linkGenre = linkUrl.searchParams.get('genre')?.toLowerCase() || null;
+      const linkOtt = linkUrl.searchParams.get('ott')?.toLowerCase() || null;
+      
+      const currentGenre = url.searchParams.get('genre')?.toLowerCase() || null;
+      const currentOtt = url.searchParams.get('ott')?.toLowerCase() || null;
+
+      let isActive = false;
+      
+      const isGenreLink = link.closest('div')?.previousElementSibling?.textContent?.toLowerCase().includes('genres');
+      const isOttLink = link.closest('div')?.previousElementSibling?.textContent?.toLowerCase().includes('ott platforms');
+
+      if (isGenreLink) {
+        isActive = linkGenre === currentGenre;
+      } else if (isOttLink) {
+        isActive = linkOtt === currentOtt;
+      }
+      
+      if (isActive) {
+        link.classList.add('bg-ink', 'text-canvas', 'border-ink');
+        link.classList.remove('bg-canvas', 'text-body', 'border-hairline');
+      } else {
+        link.classList.remove('bg-ink', 'text-canvas', 'border-ink');
+        link.classList.add('bg-canvas', 'text-body', 'border-hairline');
+      }
+    });
+  }
+
+  updateUI();
+
+  window.addEventListener('popstate', updateUI);
+  document.addEventListener('astro:after-swap', updateUI);
+</script>

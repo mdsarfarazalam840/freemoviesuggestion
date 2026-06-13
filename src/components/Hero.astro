@@ -1,0 +1,58 @@
+---
+interface Props {
+  title: string;
+  subtitle?: string;
+}
+
+const { title, subtitle } = Astro.props;
+---
+
+<section class="relative isolate overflow-hidden bg-canvas py-24 sm:py-40">
+  <!-- Mesh Gradient Background - 2026 Edition -->
+  <div class="absolute inset-0 -z-10 bg-[radial-gradient(45rem_50rem_at_top,theme(colors.link/10%),transparent)]"></div>
+  <div class="absolute inset-0 -z-10 bg-[radial-gradient(30rem_30rem_at_bottom_right,theme(colors.accent/10%),transparent)]"></div>
+  
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="text-center">
+      <div class="mb-10 flex justify-center">
+        <span class="inline-flex items-center rounded-pill bg-link/10 px-4 py-1.5 text-xs font-bold text-link uppercase tracking-widest ring-1 ring-inset ring-link/20">
+          <span class="mr-2 flex h-2 w-2 rounded-full bg-link animate-pulse"></span>
+          AI-Powered Recommendations Live
+        </span>
+      </div>
+      
+      <h1 class="mx-auto max-w-4xl text-5xl font-bold tracking-tight text-ink sm:text-7xl lg:text-8xl">
+        {title}<span class="text-link">.</span>
+      </h1>
+      
+      {subtitle && (
+        <p class="mx-auto mt-8 max-w-2xl text-lg leading-8 text-body sm:text-xl">
+          {subtitle}
+        </p>
+      )}
+      
+      <div class="mt-12 flex flex-col items-center justify-center gap-6 sm:flex-row">
+        <a 
+          href="/movies" 
+          class="group btn-premium h-14 bg-ink px-10 text-lg text-canvas hover:scale-105"
+        >
+          <div class="absolute inset-0 bg-gradient-to-r from-link to-link-hover opacity-0 transition-opacity group-hover:opacity-100"></div>
+          <span class="relative">Start Discovery</span>
+        </a>
+        
+        <a href="#regions" class="group flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-ink transition-colors hover:text-link">
+          Explore Regions
+          <svg class="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decorative elements -->
+  <div class="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/2 blur-3xl opacity-20 pointer-events-none">
+    <div class="aspect-square w-[500px] rounded-full bg-link"></div>
+  </div>
+</section>
+

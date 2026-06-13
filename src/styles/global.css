@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors - 2026 Premium Noir Palette */
+  --color-ink: var(--ink);
+  --color-canvas: var(--canvas);
+  --color-canvas-soft: var(--canvas-soft);
+  --color-canvas-soft-2: var(--canvas-soft-2);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-link: var(--link);
+  --color-link-hover: var(--link-hover);
+  --color-body: var(--body);
+  --color-mute: var(--mute);
+  --color-accent: #F5C518; /* Cinematic Gold */
+  --color-accent-red: #E50914; /* Netflix Red for urgency/hot picks */
+
+  /* Advanced Gradients */
+  --color-gradient-primary: linear-gradient(135deg, #007cf0 0%, #00dfd8 100%);
+  --color-gradient-hot: linear-gradient(135deg, #ff4d4d 0%, #f9cb28 100%);
+  --color-gradient-deep: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%);
+
+  /* Typography */
+  --font-sans: "Inter Tight", "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Clash Display", "Playfair Display", serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", monospace;
+
+  /* Shadows - 2026 Depth */
+  --shadow-premium: 0 0 0 1px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.05), 0 12px 24px rgba(0,0,0,0.05);
+  --shadow-premium-dark: 0 0 0 1px rgba(255,255,255,0.1), 0 10px 30px -10px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 20px rgba(50, 145, 255, 0.3);
+
+  /* Spacing */
+  --spacing-section: 160px;
+
+  /* Radius */
+  --radius-premium: 14px;
+  --radius-pill: 9999px;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --ink: #0F172A;
+    --canvas: #FFFFFF;
+    --canvas-soft: #F8FAFC;
+    --canvas-soft-2: #F1F5F9;
+    --hairline: #E2E8F0;
+    --hairline-strong: #94A3B8;
+    --link: #2563EB;
+    --link-hover: #1D4ED8;
+    --body: #475569;
+    --mute: #64748B;
+  }
+
+  .dark {
+    color-scheme: dark;
+    --ink: #F8FAFC;
+    --canvas: #020617;
+    --canvas-soft: #0F172A;
+    --canvas-soft-2: #1E293B;
+    --hairline: #1E293B;
+    --hairline-strong: #334155;
+    --link: #38BDF8;
+    --link-hover: #7DD3FC;
+    --body: #94A3B8;
+    --mute: #64748B;
+  }
+
+  body {
+    @apply bg-canvas text-ink font-sans antialiased selection:bg-link/20 selection:text-link transition-colors duration-500;
+  }
+
+  h1, h2, h3 {
+    @apply font-display font-bold tracking-tight text-balance;
+  }
+}
+
+@utility btn-premium {
+  @apply relative inline-flex items-center justify-center overflow-hidden rounded-premium font-bold transition-all duration-300 active:scale-95 shadow-premium hover:shadow-glow;
+}
+
+@utility glass-2026 {
+  background: color-mix(in srgb, var(--canvas) 70%, transparent);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid var(--hairline);
+}
+
+@utility bento-card {
+  @apply rounded-premium border border-hairline bg-canvas transition-all duration-500 hover:shadow-premium dark:hover:shadow-premium-dark hover:-translate-y-1;
+}
+
+@utility text-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: var(--color-gradient-primary);
+}
+
+@layer components {
+  .nav-link {
+    @apply relative px-3 py-2 text-sm font-medium text-body transition-colors hover:text-ink;
+  }
+  
+  .nav-link::after {
+    content: '';
+    @apply absolute bottom-0 left-3 right-3 h-0.5 scale-x-0 bg-link transition-transform duration-300;
+  }
+
+  .nav-link.active::after {
+    @apply scale-x-100;
+  }
+}
+

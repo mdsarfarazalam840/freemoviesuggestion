@@ -1,0 +1,119 @@
+---
+const faqs = [
+  {
+    question: "What are the top 10 movies today?",
+    answer: "Our current top 10 picks include Interstellar, Dangal, RRR, The Dark Knight, Pushpa: The Rise, Lagaan, Bahubali: The Beginning, 3 Idiots, Spider-Man: Across the Spider-Verse, and K.G.F: Chapter 1."
+  },
+  {
+    question: "What are the 10 best films to watch?",
+    answer: "The 10 best films often recommended by critics and audiences include The Shawshank Redemption, The Godfather, The Dark Knight, Schindler's List, 12 Angry Men, Pulp Fiction, The Lord of the Rings: The Return of the King, The Good, the Bad and the Ugly, Forrest Gump, and Inception."
+  },
+  {
+    question: "What are good movie suggestions?",
+    answer: "Good movie suggestions depend on your favorite genre. For Sci-Fi, we recommend 'Interstellar'. For Action, 'The Dark Knight' or 'RRR'. For Comedy, '3 Idiots' is a must-watch."
+  },
+  {
+    question: "Which is the top 10 movie?",
+    answer: "Currently, 'Interstellar' is the top-ranked movie on our platform, followed closely by 'Dangal' and 'The Dark Knight'."
+  },
+  {
+    question: "Which 3 movies got 17 Oscars?",
+    answer: "There are no three movies that collectively won exactly 17 Oscars while being the 'highest'. However, the three films with the most Oscars ever are Ben-Hur, Titanic, and The Lord of the Rings: The Return of the King, each winning 11 Academy Awards."
+  },
+  {
+    question: "Which movie has a 9.9 rating in India?",
+    answer: "While a 9.9 rating is extremely rare, highly acclaimed movies like 'The Dark Knight' and certain regional masterpieces often receive near-perfect scores from audiences in India."
+  },
+  {
+    question: "What are the 20 top movies of all time?",
+    answer: "The top 20 movies of all time usually include masterpieces like The Shawshank Redemption, The Godfather, The Dark Knight, 12 Angry Men, Schindler's List, LOTR: Return of the King, Pulp Fiction, and Seven Samurai."
+  },
+  {
+    question: "Which 3 films won 11 Oscars?",
+    answer: "The only three films in history to win 11 Academy Awards are Ben-Hur (1959), Titanic (1997), and The Lord of the Rings: The Return of the King (2003)."
+  },
+  {
+    question: "What are the 10 most watched movies?",
+    answer: "Based on global box office and streaming data, the 10 most watched movies include Avatar, Avengers: Endgame, Titanic, Star Wars: The Force Awakens, and Avengers: Infinity War."
+  },
+  {
+    question: "What are the big 5 in movies?",
+    answer: "The 'Big Five' Academy Awards refer to the five most prestigious categories: Best Picture, Best Director, Best Actor, Best Actress, and Best Screenplay (either Original or Adapted)."
+  },
+  {
+    question: "What are five good movies?",
+    answer: "Five excellent and diverse movie suggestions are: 1. Interstellar, 2. The Dark Knight, 3. Dangal, 4. Parasite, and 5. Inception."
+  },
+  {
+    question: "Which is the 7 word Hindi movie?",
+    answer: "Classic Hindi movies often have long titles. While 'Dilwale Dulhania Le Jayenge' is 4 words, other long-titled favorites include 'Hum Aapke Hain Koun..!' and 'Zindagi Na Milegi Dobara'."
+  },
+  {
+    question: "How to reset Netflix movie suggestions?",
+    answer: "To reset your Netflix suggestions, you can clear your viewing history. Go to Account -> Profile & Parental Controls -> select your profile -> Viewing activity -> and select 'Hide all'."
+  },
+  {
+    question: "What are some good movie suggestions?",
+    answer: "You can find great suggestions right here on our platform! We categorize movies by region (Bollywood, Hollywood, Tollywood) and genre to help you find exactly what you're in the mood for."
+  },
+  {
+    question: "How to ask for movie suggestions?",
+    answer: "You can use our search and filter tools to get instant suggestions, or ask friends on social media using specific genres you like. Our engine is built to give you the best picks based on current trends."
+  },
+  {
+    question: "How Did This Get Made movie suggestions?",
+    answer: "The 'How Did This Get Made?' podcast focuses on cult classics and notoriously bad films. If you enjoy those, check out our 'Cult Classics' or 'Action' sections for similar high-energy picks."
+  },
+  {
+    question: "Movie suggestions based on what I like?",
+    answer: "Our platform helps you find movies based on your preferences. By selecting a genre or region you already enjoy, our engine surfaces top-rated films that match your viewing style."
+  },
+  {
+    question: "What movie to watch tonight suggestions?",
+    answer: "For tonight, we recommend checking out our 'Top 10 Picks Today' section. It's updated daily with the most popular and trending movies across all streaming platforms."
+  }
+];
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faqs.map(faq => ({
+    "@type": "Question",
+    "name": faq.question,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": faq.answer
+    }
+  }))
+};
+---
+
+<section id="faq" class="py-24 bg-canvas border-t border-hairline">
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+    <div class="mb-16 text-center">
+      <h2 class="text-4xl font-bold tracking-tight text-ink sm:text-5xl">Expert Movie Insights</h2>
+      <p class="mt-4 text-lg text-body">Everything you need to know about finding your next cinematic masterpiece.</p>
+    </div>
+    
+    <div class="space-y-4">
+      {faqs.map((faq) => (
+        <details class="group bento-card overflow-hidden transition-all duration-300 open:shadow-premium-dark">
+          <summary class="flex cursor-pointer items-center justify-between p-6 list-none focus:outline-none">
+            <h3 class="text-lg font-bold text-ink pr-4 flex items-center gap-3">
+              <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-pill bg-link/10 text-xs font-bold text-link group-open:bg-link group-open:text-white transition-colors">?</span>
+              {faq.question}
+            </h3>
+            <span class="shrink-0 transition-transform duration-300 group-open:rotate-180">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </span>
+          </summary>
+          <div class="px-6 pb-6 transition-all duration-300">
+            <p class="text-body leading-relaxed pl-9 border-l-2 border-hairline">{faq.answer}</p>
+          </div>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />

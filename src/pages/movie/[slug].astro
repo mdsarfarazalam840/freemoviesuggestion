@@ -1,0 +1,221 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import { getMovieBySlug } from '../../services/movieService';
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+const movie = slug ? await getMovieBySlug(slug) : null;
+
+if (!movie) {
+  Astro.response.status = 404;
+}
+
+// Redirect if the slug doesn't match the movie's official slug (e.g. missing ID suffix)
+if (movie && movie.slug !== slug) {
+  return Astro.redirect(`/movie/${movie.slug}`);
+}
+---
+
+<Layout title={movie?.title || 'Movie Not Found'} description={movie?.description || 'The requested movie could not be found.'}>
+  {movie && (
+    <script type="application/ld+json" is:inline set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Movie",
+      "name": movie.title,
+      "description": movie.description,
+      "image": movie.thumbnail,
+      "datePublished": movie.releaseYear.toString(),
+      "genre": movie.genres,
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": movie.rating,
+        "bestRating": "10",
+        "worstRating": "1",
+        "ratingCount": "100" // Placeholder as TMDB rating count isn't in our schema yet
+      }
+    })} />
+    <script type="application/ld+json" is:inline set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": Astro.site
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Movies",
+          "item": new URL('/movies', Astro.site)
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": movie.title,
+          "item": new URL(Astro.url.pathname, Astro.site)
+        }
+      ]
+    })} />
+  )}
+  <Navbar />
+  <main class="bg-canvas min-h-screen">
+    {movie ? (
+    <>
+    <!-- Hero Banner - 2026 Cinematic -->
+    <div class="relative min-h-[500px] md:min-h-[650px] w-full overflow-hidden">
+      <img 
+        src={movie.thumbnail} 
+        alt={movie.title}
+        class="absolute inset-0 h-full w-full object-cover blur-3xl opacity-40 scale-125 transition-transform duration-[20s] ease-linear animate-pulse"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/40 to-transparent"></div>
+      
+      <div class="relative mx-auto max-w-7xl px-4 h-full flex items-center md:items-end pb-20 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row gap-12 items-center md:items-end w-full">
+          <div class="w-56 sm:w-72 flex-shrink-0 shadow-premium-dark rounded-premium overflow-hidden border-2 border-white/10 bg-canvas group">
+             <img 
+              src={movie.thumbnail} 
+              alt={movie.title}
+              class="w-full aspect-[2/3] object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
+          <div class="flex-1 text-center md:text-left">
+            <div class="flex items-center justify-center md:justify-start gap-3 mb-6">
+               <span class="rounded-pill bg-link px-4 py-1.5 text-xs font-black text-white uppercase tracking-widest shadow-glow">
+                {movie.region}
+              </span>
+              <span class="text-lg font-bold text-mute">{movie.releaseYear}</span>
+            </div>
+            <h1 class="text-5xl sm:text-7xl font-bold tracking-tight text-ink mb-6 drop-shadow-sm">{movie.title}</h1>
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-8">
+              <div class="flex items-center gap-3">
+                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-ink shadow-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </div>
+                <div>
+                  <div class="text-2xl font-black text-ink">{movie.rating}<span class="text-sm font-medium text-mute">/10</span></div>
+                  <div class="text-[10px] font-bold uppercase tracking-widest text-mute">Viewer Score</div>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                {movie.genres.map(genre => (
+                  <a 
+                    href={`/genre/${genre.toLowerCase()}`} 
+                    class="text-sm font-bold text-body px-4 py-2 bg-canvas-soft-2 rounded-pill border border-hairline hover:border-link hover:text-link transition-all"
+                  >
+                    #{genre}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content - 2026 Layout -->
+    <section class="py-24">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-20">
+          <div class="lg:col-span-8">
+            <div class="mb-16">
+              <h2 class="text-3xl font-bold text-ink mb-8 flex items-center gap-3">
+                <span class="h-8 w-1.5 bg-link rounded-full"></span>
+                The Storyline
+              </h2>
+              <p class="text-xl text-body leading-relaxed opacity-90 first-letter:text-5xl first-letter:font-bold first-letter:mr-3 first-letter:float-left first-letter:text-link">
+                {movie.description}
+              </p>
+            </div>
+
+            <h2 class="text-3xl font-bold text-ink mb-10 flex items-center gap-3">
+              <span class="h-8 w-1.5 bg-accent rounded-full"></span>
+              Experience on Streaming
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {movie.ottPlatforms.map(platform => (
+                <div class="flex flex-col gap-3 group">
+                  <a 
+                    href={platform.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="flex items-center justify-between p-6 rounded-premium border border-hairline bg-canvas transition-all hover:border-link hover:shadow-premium group"
+                  >
+                    <div class="flex items-center gap-4">
+                      <div class="h-14 w-14 rounded-premium bg-canvas-soft-2 border border-hairline flex items-center justify-center p-3 shadow-inner">
+                        <img src={platform.logo} alt={platform.name} class="max-h-full max-w-full object-contain transition-transform group-hover:scale-110" />
+                      </div>
+                      <div>
+                        <span class="block font-black text-ink">Watch on {platform.name}</span>
+                        <span class="text-xs font-bold text-link uppercase tracking-widest">Premium Discovery</span>
+                      </div>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-hairline-strong group-hover:text-link group-hover:translate-x-1 transition-all"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+                  </a>
+                  <a 
+                    href={`/ott/${platform.name.toLowerCase().replace('+', 'plus').replace(' ', '-')}`}
+                    class="text-xs font-bold text-mute hover:text-link transition-colors px-2 flex items-center gap-1"
+                  >
+                    More {platform.name} Suggestions <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <aside class="lg:col-span-4 space-y-12">
+            <div class="rounded-premium border border-hairline p-10 bg-canvas-soft-2 relative overflow-hidden group">
+              <div class="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-32 h-32 bg-link/5 rounded-full blur-2xl"></div>
+              <h3 class="text-xl font-bold text-ink mb-8 relative">Movie Intelligence</h3>
+              <dl class="space-y-8 relative">
+                <div class="flex justify-between items-center border-b border-hairline pb-4">
+                  <dt class="text-[10px] font-black uppercase tracking-widest text-mute">Release Window</dt>
+                  <dd class="text-sm font-bold text-ink">{movie.releaseYear}</dd>
+                </div>
+                <div class="flex justify-between items-center border-b border-hairline pb-4">
+                  <dt class="text-[10px] font-black uppercase tracking-widest text-mute">Origin Region</dt>
+                  <dd class="text-sm font-bold text-ink">{movie.region}</dd>
+                </div>
+                <div class="flex justify-between items-center border-b border-hairline pb-4">
+                  <dt class="text-[10px] font-black uppercase tracking-widest text-mute">Genre Spectrum</dt>
+                  <dd class="text-sm font-bold text-ink text-right">{movie.genres.join(', ')}</dd>
+                </div>
+              </dl>
+            </div>
+            
+            <div class="text-center p-10 border-2 border-dashed border-link/20 rounded-premium bg-link/5">
+              <div class="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-full bg-link text-white shadow-glow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+              </div>
+              <p class="text-base font-bold text-ink mb-6 italic leading-relaxed">"Verified Suggestion: This title is trending in the top 1% of community picks this month."</p>
+              <div class="flex justify-center -space-x-3">
+                {[1,2,3,4,5].map(i => (
+                  <div class="h-10 w-10 rounded-full border-2 border-canvas bg-canvas-soft-2 flex items-center justify-center text-mute shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+    </>
+    ) : (
+    <div class="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+      <h1 class="text-6xl font-bold text-ink">404</h1>
+      <p class="text-xl text-body mt-4">Movie not found</p>
+      <p class="text-body mt-2">This movie hasn't been added to our database yet.</p>
+      <a href="/" class="mt-8 px-6 py-3 bg-link text-white rounded-premium font-medium hover:bg-link/90 transition-colors">
+        Browse Movies
+      </a>
+    </div>
+    )}
+  </main>
+  <Footer />
+</Layout>

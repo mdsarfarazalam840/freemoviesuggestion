@@ -1,0 +1,75 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import MovieCardReact from '../../components/MovieCard.tsx';
+import Footer from '../../components/Footer.astro';
+import { getMoviesPage } from '../../services/movieService';
+
+export const prerender = false;
+
+const { region } = Astro.params;
+const page = Number(Astro.url.searchParams.get('page') || '1');
+const pageData = await getMoviesPage({ page, limit: 24, region });
+const filteredMovies = pageData.movies;
+const pageHref = (nextPage: number) => nextPage > 1 ? `/region/${region}?page=${nextPage}` : `/region/${region}`;
+---
+
+<Layout title={`${region} Movies`} description={`The best ${region} movies selected for you.`}>
+  <script type="application/ld+json" is:inline set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": Astro.site
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Regions",
+        "item": new URL('/movies#regions', Astro.site)
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": region,
+        "item": new URL(Astro.url.pathname, Astro.site)
+      }
+    ]
+  })} />
+  <Navbar />
+  <main class="min-h-screen bg-canvas-soft py-16">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="mb-12">
+        <nav class="flex mb-4" aria-label="Breadcrumb">
+          <ol class="flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-mute">
+            <li><a href="/" class="hover:text-ink">Home</a></li>
+            <li><span class="mx-2">/</span></li>
+            <li><a href="/movies" class="hover:text-ink">Movies</a></li>
+            <li><span class="mx-2">/</span></li>
+            <li class="text-ink">Region</li>
+          </ol>
+        </nav>
+        <h1 class="text-4xl font-bold tracking-tight text-ink">{region} Movies<span class="text-link">.</span></h1>
+        <p class="mt-4 text-lg text-body max-w-2xl">
+          Discover high-quality {region} cinema across all streaming platforms.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        {filteredMovies.map(movie => <MovieCardReact client:visible movie={movie} />)}
+      </div>
+
+      {pageData.totalPages > 1 && (
+        <nav class="mt-10 flex items-center justify-between border-t border-hairline pt-6" aria-label="Pagination">
+          <a href={pageHref(pageData.page - 1)} class:list={['text-sm font-medium text-link hover:underline', pageData.page <= 1 && 'pointer-events-none opacity-40']}>Previous</a>
+          <span class="text-sm text-mute">Page {pageData.page} of {pageData.totalPages}</span>
+          <a href={pageHref(pageData.page + 1)} class:list={['text-sm font-medium text-link hover:underline', pageData.page >= pageData.totalPages && 'pointer-events-none opacity-40']}>Next</a>
+        </nav>
+      )}
+    </div>
+  </main>
+  <Footer />
+</Layout>

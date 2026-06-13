@@ -1,0 +1,78 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import MovieCardReact from '../../components/MovieCard.tsx';
+import Footer from '../../components/Footer.astro';
+import { getMoviesPage } from '../../services/movieService';
+import { OTT_PLATFORMS } from '../../data/movies';
+
+export const prerender = false;
+
+const { ott } = Astro.params;
+const normalizeOttSlug = (value = '') => value.toLowerCase().trim().replace(/\+/g, 'plus').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const ottLabel = OTT_PLATFORMS.find((platform) => normalizeOttSlug(platform.name) === normalizeOttSlug(ott))?.name || ott;
+const page = Number(Astro.url.searchParams.get('page') || '1');
+const pageData = await getMoviesPage({ page, limit: 24, ott: ottLabel });
+const filteredMovies = pageData.movies;
+const pageHref = (nextPage: number) => nextPage > 1 ? `/ott/${ott}?page=${nextPage}` : `/ott/${ott}`;
+---
+
+<Layout title={`Movies on ${ottLabel}`} description={`Find the best movies available to watch on ${ottLabel}.`}>
+  <script type="application/ld+json" is:inline set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": Astro.site
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Platforms",
+        "item": new URL('/movies#ott', Astro.site)
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": ottLabel,
+        "item": new URL(Astro.url.pathname, Astro.site)
+      }
+    ]
+  })} />
+  <Navbar />
+  <main class="min-h-screen bg-canvas-soft py-16">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="mb-12">
+        <nav class="flex mb-4" aria-label="Breadcrumb">
+          <ol class="flex items-center space-x-2 text-xs font-mono uppercase tracking-wider text-mute">
+            <li><a href="/" class="hover:text-ink">Home</a></li>
+            <li><span class="mx-2">/</span></li>
+            <li><a href="/movies" class="hover:text-ink">Movies</a></li>
+            <li><span class="mx-2">/</span></li>
+            <li class="text-ink">OTT Platform</li>
+          </ol>
+        </nav>
+        <h1 class="text-4xl font-bold tracking-tight text-ink">Best on {ottLabel}<span class="text-link">.</span></h1>
+        <p class="mt-4 text-lg text-body max-w-2xl">
+          Everything you can stream on {ottLabel} today, handpicked by our recommendation engine.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        {filteredMovies.map(movie => <MovieCardReact client:visible movie={movie} />)}
+      </div>
+
+      {pageData.totalPages > 1 && (
+        <nav class="mt-10 flex items-center justify-between border-t border-hairline pt-6" aria-label="Pagination">
+          <a href={pageHref(pageData.page - 1)} class:list={['text-sm font-medium text-link hover:underline', pageData.page <= 1 && 'pointer-events-none opacity-40']}>Previous</a>
+          <span class="text-sm text-mute">Page {pageData.page} of {pageData.totalPages}</span>
+          <a href={pageHref(pageData.page + 1)} class:list={['text-sm font-medium text-link hover:underline', pageData.page >= pageData.totalPages && 'pointer-events-none opacity-40']}>Next</a>
+        </nav>
+      )}
+    </div>
+  </main>
+  <Footer />
+</Layout>
