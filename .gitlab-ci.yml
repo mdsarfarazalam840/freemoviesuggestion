@@ -1,4 +1,5 @@
 # GitLab CI/CD Pipeline — Astro + Cloudflare Pages
+# Last triggered: 2026-06-13
 # Required CI/CD Variables (Settings > CI/CD > Variables):
 #   CLOUDFLARE_API_TOKEN     — Cloudflare API token with "Cloudflare Pages:Edit" permission
 #   CLOUDFLARE_ACCOUNT_ID    — Your Cloudflare account ID
