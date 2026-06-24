@@ -70,7 +70,7 @@ deploy:preview:
         exit 1
       fi
     - npm ci
-    - npx wrangler pages deploy dist/ --project-name=freemoviesuggestion --branch=$CI_COMMIT_REF_SLUG
+    - npx wrangler deploy --config dist/server/wrangler.json --name freemoviesuggestion-$CI_COMMIT_REF_SLUG --keep-vars
   environment:
     name: preview/$CI_COMMIT_REF_SLUG
     url: https://$CI_COMMIT_REF_SLUG.freemoviesuggestion.pages.dev
@@ -106,7 +106,7 @@ deploy:production:
         exit 1
       fi
     - npm ci
-    - npx wrangler pages deploy dist/ --project-name=freemoviesuggestion --branch=main
+    - npx wrangler deploy --config dist/server/wrangler.json --keep-vars
   environment:
     name: production
     url: https://freemoviesuggestion.com
