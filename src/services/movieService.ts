@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { getCachedData, setCachedData } from './cache';
-import { OTT_PLATFORMS } from '../data/movies';
+import { movies as localMovies, OTT_PLATFORMS } from '../data/movies';
 import type { Movie, OTTPlatform } from '../data/movies';
 
 const DEFAULT_PAGE = 1;
@@ -34,6 +34,10 @@ export type MoviePage = {
   page: number;
   limit: number;
   totalPages: number;
+};
+
+type FetchMoviePageResult = MoviePage & {
+  isFallback?: boolean;
 };
 
 function slugify(value: string) {
@@ -185,18 +189,58 @@ function movieCacheKey(prefix: string, options: MovieQueryOptions = {}) {
   return `remote_movies:v6:${parts.join(':')}`;
 }
 
-async function fetchMoviePage(options: MovieQueryOptions = {}): Promise<MoviePage> {
+function matchesFilter(value: string | undefined, filter: string): boolean {
+  return value?.toLowerCase() === filter.toLowerCase();
+}
+
+function movieHasGenre(movie: Movie, genre: string): boolean {
+  const genreSearch = genre === 'Sci-Fi' ? ['Sci-Fi', 'Science Fiction'] : [genre];
+  return movie.genres.some((movieGenre) => genreSearch.some((item) => matchesFilter(movieGenre, item)));
+}
+
+function movieHasOttPlatform(movie: Movie, ott: string): boolean {
+  return movie.ottPlatforms.some((platform) => matchesFilter(platform.name, ott));
+}
+
+function sortMoviesForCatalog(a: Movie, b: Movie): number {
+  const aRank = a.rank ?? Number.POSITIVE_INFINITY;
+  const bRank = b.rank ?? Number.POSITIVE_INFINITY;
+
+  if (aRank !== bRank) return aRank - bRank;
+  return b.releaseYear - a.releaseYear;
+}
+
+function getLocalMoviePage(options: MovieQueryOptions = {}): FetchMoviePageResult {
   const page = normalizePage(options.page);
   const limit = normalizeLimit(options.limit);
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
   const region = normalizeFilter(options.region);
   const genre = normalizeFilter(options.genre);
   const ott = normalizeFilter(options.ott);
 
-  let query = supabase
-    .from('movies')
-    .select('*', { count: 'exact' });
+  const filteredMovies = localMovies
+    .filter((movie) => !region || matchesFilter(movie.region, region))
+    .filter((movie) => !genre || movieHasGenre(movie, genre))
+    .filter((movie) => !ott || movieHasOttPlatform(movie, ott))
+    .filter((movie) => !options.topOnly || movie.isTop10)
+    .sort(sortMoviesForCatalog);
+
+  const from = (page - 1) * limit;
+  const count = filteredMovies.length;
+
+  return {
+    movies: filteredMovies.slice(from, from + limit),
+    count,
+    page,
+    limit,
+    totalPages: Math.ceil(count / limit),
+    isFallback: true,
+  };
+}
+
+function applyMovieFilters(query: any, options: MovieQueryOptions = {}) {
+  const region = normalizeFilter(options.region);
+  const genre = normalizeFilter(options.genre);
+  const ott = normalizeFilter(options.ott);
 
   if (region) query = query.ilike('region', region);
   if (genre) {
@@ -210,17 +254,37 @@ async function fetchMoviePage(options: MovieQueryOptions = {}): Promise<MoviePag
   if (ott) query = query.filter('ott_platforms', 'cs', JSON.stringify([{ name: ott }]));
   if (options.topOnly) query = query.eq('is_top_10', true);
 
-  const { data, error, count } = await query
+  return query;
+}
+
+async function fetchMoviePage(options: MovieQueryOptions = {}): Promise<FetchMoviePageResult> {
+  const page = normalizePage(options.page);
+  const limit = normalizeLimit(options.limit);
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  const pageQuery = applyMovieFilters(supabase.from('movies').select('*'), options);
+  const { data, error } = await pageQuery
     .order('rank', { ascending: true, nullsFirst: false })
     .order('release_date', { ascending: false, nullsFirst: false })
     .range(from, to);
 
   if (error) {
     console.warn('Supabase movie page fetch failed:', error);
-    return { movies: [], count: 0, page, limit, totalPages: 0 };
+    return getLocalMoviePage(options);
   }
 
-  const safeCount = count || 0;
+  const countQuery = applyMovieFilters(
+    supabase.from('movies').select('id', { count: 'estimated', head: true }),
+    options
+  );
+  const { count, error: countError } = await countQuery;
+
+  if (countError) {
+    console.warn('Supabase movie count failed:', countError);
+  }
+
+  const safeCount = count ?? data?.length ?? 0;
 
   return {
     movies: normalizeMovies(data),
@@ -243,9 +307,13 @@ export async function getMoviesPage(options: MovieQueryOptions = {}): Promise<Mo
   }
 
   const result = await fetchMoviePage(options);
-  await setCachedData(cacheKey, result);
+  const { isFallback, ...pageResult } = result;
 
-  return result;
+  if (!isFallback) {
+    await setCachedData(cacheKey, pageResult);
+  }
+
+  return pageResult;
 }
 
 export async function getMovieBySlug(slug: string): Promise<Movie | null> {
@@ -263,7 +331,8 @@ export async function getMovieBySlug(slug: string): Promise<Movie | null> {
 
   if (error) {
     console.warn(`Supabase movie fetch failed for slug ${slug}:`, error);
-    return null;
+    const local = localMovies.find((m) => m.slug === slug);
+    return local || null;
   }
 
   if (data) {
@@ -318,7 +387,8 @@ export async function getMovieById(id: number | string): Promise<Movie | null> {
 
   if (error) {
     console.warn(`Supabase movie fetch failed for id ${id}:`, error);
-    return null;
+    const local = localMovies.find((m) => m.id === String(id));
+    return local || null;
   }
 
   if (!data) return null;
@@ -354,7 +424,19 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
 
   if (error) {
     console.warn(`Supabase search failed for ${searchTerm}:`, error);
-    return { movies: [], count: 0, page, limit, totalPages: 0 };
+    const localResults = localMovies.filter(
+      (m) =>
+        m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    const safeCount = localResults.length;
+    return {
+      movies: localResults.slice(from, from + limit),
+      count: safeCount,
+      page,
+      limit,
+      totalPages: Math.ceil(safeCount / limit),
+    };
   }
 
   const safeCount = count || 0;
@@ -391,7 +473,10 @@ export async function getRecommendations(movie: Movie, limit = 6): Promise<Movie
 
   if (error) {
     console.warn(`Supabase recommendations failed for ${movie.id}:`, error);
-    return [];
+    const localRecs = localMovies
+      .filter((m) => m.id !== movie.id && m.genres.some((g) => movie.genres.includes(g)))
+      .slice(0, limit);
+    return localRecs;
   }
 
   const result = normalizeMovies(data);
@@ -408,13 +493,15 @@ export async function getTrendingMovies(limit = DEFAULT_LIMIT): Promise<Movie[]>
     return normalizeMovies(cachedData);
   }
 
-  const { movies: result } = await fetchMoviePage({ limit, topOnly: true });
+  const page = await fetchMoviePage({ limit, topOnly: true });
+  const result = page.movies;
 
-  await setCachedData(cacheKey, result);
+  if (!page.isFallback) {
+    await setCachedData(cacheKey, result);
+  }
   
   return result;
 }
-
 export async function getPopularMovies(limit = 10): Promise<Movie[]> {
   const cacheKey = movieCacheKey('popular', { limit });
   
@@ -432,7 +519,11 @@ export async function getPopularMovies(limit = 10): Promise<Movie[]> {
 
   if (error) {
     console.warn('Supabase popular movie fetch failed:', error);
-    return [];
+    const fallbackMovies = localMovies
+      .filter((m) => m.isTop10)
+      .sort((a, b) => (a.rank || 99) - (b.rank || 99))
+      .slice(0, limit);
+    return fallbackMovies;
   }
 
   const result = normalizeMovies(data);
@@ -454,7 +545,7 @@ export async function getAllMovieSlugs(): Promise<string[]> {
 
   if (error) {
     console.warn('Supabase fetch all slugs failed:', error);
-    return [];
+    return localMovies.map((row) => row.slug);
   }
 
   const slugs = data.map(row => row.slug);
