@@ -1,15 +1,5 @@
 {
   "name": "freemoviesuggestion",
   "compatibility_date": "2026-04-15",
-  "workers_dev": false,
-  "routes": [
-    {
-      "pattern": "freemoviesuggestion.com/*",
-      "zone_name": "freemoviesuggestion.com"
-    },
-    {
-      "pattern": "www.freemoviesuggestion.com/*",
-      "zone_name": "freemoviesuggestion.com"
-    }
-  ]
+  "workers_dev": true
 }
