@@ -1,10 +1,15 @@
 type EnvMap = Record<string, string | undefined>;
 
+function getEnvValue(name: string): string | undefined {
+  if (typeof process !== 'undefined' && process.env && process.env[name]) {
+    return process.env[name];
+  }
+  return undefined;
+}
+
 export function getServerEnv(names: string[], fallback = ''): string {
-  // Always read from process.env at call time (not cached at module load).
-  // On Cloudflare Workers, the middleware populates process.env at request time.
   for (const name of names) {
-    const value = process.env[name];
+    const value = getEnvValue(name);
     if (value) return value;
   }
   return fallback;
