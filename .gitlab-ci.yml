@@ -1,0 +1,135 @@
+# GitLab CI/CD Pipeline — Astro + Cloudflare Workers
+# Required CI/CD Variables (Settings > CI/CD > Variables):
+#   CLOUDFLARE_API_TOKEN     — Cloudflare API token with "Workers:Edit" permission
+#   CLOUDFLARE_ACCOUNT_ID    — Your Cloudflare account ID
+#   SUPABASE_URL             — Supabase project URL
+#   SUPABASE_SERVICE_ROLE_KEY — Supabase service role key
+#   UPSTASH_REDIS_REST_URL   — Upstash Redis REST URL
+#   UPSTASH_REDIS_REST_TOKEN — Upstash Redis REST token
+#   TMDB_API_KEY             — TMDB API key
+
+# IMPORTANT: Must use node:22 (Debian/glibc) NOT node:22-alpine (musl libc).
+# @astrojs/cloudflare depends on @cloudflare/workerd-linux-64 which is a
+# glibc binary and will not run on Alpine Linux.
+default:
+  image: node:22
+
+stages:
+  - test
+  - build
+  - deploy
+
+# ─── Test ───────────────────────────────────────────────────────────────────
+test:typecheck:
+  stage: test
+  script:
+    - npm ci
+    - npx tsc --noEmit
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_COMMIT_BRANCH =~ /^(main|master|develop)$/'
+
+# ─── Build ──────────────────────────────────────────────────────────────────
+build:astro:
+  stage: build
+  variables:
+    SUPABASE_URL: $SUPABASE_URL
+    SUPABASE_SERVICE_ROLE_KEY: $SUPABASE_SERVICE_ROLE_KEY
+    UPSTASH_REDIS_REST_URL: $UPSTASH_REDIS_REST_URL
+    UPSTASH_REDIS_REST_TOKEN: $UPSTASH_REDIS_REST_TOKEN
+    TMDB_API_KEY: $TMDB_API_KEY
+  script:
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 hour
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_COMMIT_BRANCH =~ /^(main|master|develop)$/'
+
+# ─── Deploy: Preview (MR only) ──────────────────────────────────────────────
+deploy:preview:
+  stage: deploy
+  needs: [build:astro]
+  script:
+    - |
+      if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+        echo "ERROR: CLOUDFLARE_API_TOKEN and/or CLOUDFLARE_ACCOUNT_ID are not set."
+        echo "Add them in Settings > CI/CD > Variables before deploying."
+        exit 1
+      fi
+    - npm ci
+    # Set secrets for preview environment
+    - |
+      echo "$SUPABASE_URL" | npx wrangler secret put SUPABASE_URL --name freemoviesuggestion-$CI_COMMIT_REF_SLUG 2>/dev/null || true
+      echo "$SUPABASE_SERVICE_ROLE_KEY" | npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --name freemoviesuggestion-$CI_COMMIT_REF_SLUG 2>/dev/null || true
+      echo "$UPSTASH_REDIS_REST_URL" | npx wrangler secret put UPSTASH_REDIS_REST_URL --name freemoviesuggestion-$CI_COMMIT_REF_SLUG 2>/dev/null || true
+      echo "$UPSTASH_REDIS_REST_TOKEN" | npx wrangler secret put UPSTASH_REDIS_REST_TOKEN --name freemoviesuggestion-$CI_COMMIT_REF_SLUG 2>/dev/null || true
+      echo "$TMDB_API_KEY" | npx wrangler secret put TMDB_API_KEY --name freemoviesuggestion-$CI_COMMIT_REF_SLUG 2>/dev/null || true
+    - npx wrangler deploy --name freemoviesuggestion-$CI_COMMIT_REF_SLUG --keep-vars
+  environment:
+    name: preview/$CI_COMMIT_REF_SLUG
+    url: https://freemoviesuggestion-$CI_COMMIT_REF_SLUG.$CI_COMMIT_REF_SLUG.workers.dev
+    on_stop: deploy:preview:stop
+    auto_stop_in: 7 days
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+deploy:preview:stop:
+  stage: deploy
+  needs: []
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - echo "Preview environment stopped."
+  environment:
+    name: preview/$CI_COMMIT_REF_SLUG
+    action: stop
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: manual
+      allow_failure: true
+
+# ─── Deploy: Production (main branch only) ──────────────────────────────────
+deploy:production:
+  stage: deploy
+  needs: [build:astro]
+  script:
+    - |
+      if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+        echo "ERROR: CLOUDFLARE_API_TOKEN and/or CLOUDFLARE_ACCOUNT_ID are not set."
+        echo "Add them in Settings > CI/CD > Variables before deploying."
+        exit 1
+      fi
+    - npm ci
+    # Create KV namespace if it doesn't exist and update wrangler.json
+    - |
+      EXISTING_KV=$(npx wrangler kv namespace list 2>/dev/null | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+      if [ -z "$EXISTING_KV" ]; then
+        echo "Creating SESSION KV namespace..."
+        KV_OUTPUT=$(npx wrangler kv namespace create SESSION 2>&1)
+        KV_ID=$(echo "$KV_OUTPUT" | grep -oP 'id = "\K[^"]+')
+        echo "Created KV namespace: $KV_ID"
+      else
+        KV_ID="$EXISTING_KV"
+        echo "Using existing KV namespace: $KV_ID"
+      fi
+      # Update wrangler.json with the correct KV ID
+      sed -i "s/\"id\": \"[^\"]*\"/\"id\": \"$KV_ID\"/" wrangler.json
+    # Set secrets for production (errors are ignored if already set)
+    - |
+      echo "$SUPABASE_URL" | npx wrangler secret put SUPABASE_URL --name freemoviesuggestion 2>/dev/null || true
+      echo "$SUPABASE_SERVICE_ROLE_KEY" | npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --name freemoviesuggestion 2>/dev/null || true
+      echo "$UPSTASH_REDIS_REST_URL" | npx wrangler secret put UPSTASH_REDIS_REST_URL --name freemoviesuggestion 2>/dev/null || true
+      echo "$UPSTASH_REDIS_REST_TOKEN" | npx wrangler secret put UPSTASH_REDIS_REST_TOKEN --name freemoviesuggestion 2>/dev/null || true
+      echo "$TMDB_API_KEY" | npx wrangler secret put TMDB_API_KEY --name freemoviesuggestion 2>/dev/null || true
+    - npx wrangler deploy --keep-vars
+  environment:
+    name: production
+    url: https://freemoviesuggestion.${CI_COMMIT_REF_SLUG}.workers.dev
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'

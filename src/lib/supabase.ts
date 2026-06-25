@@ -1,7 +1,23 @@
-import { createClient } from '@supabase/supabase-js';
-import { getSupabaseServerKey, getSupabaseUrl } from './env';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = getSupabaseUrl();
-const supabaseKey = getSupabaseServerKey();
+let _supabase: SupabaseClient | null = null;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+function getSupabaseClient(): SupabaseClient {
+  if (!_supabase) {
+    const supabaseUrl = process.env.PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || '';
+    _supabase = createClient(supabaseUrl, supabaseKey);
+  }
+  return _supabase;
+}
+
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, prop, _receiver) {
+    const client = getSupabaseClient();
+    const value = Reflect.get(client, prop);
+    if (typeof value === 'function') {
+      return value.bind(client);
+    }
+    return value;
+  },
+});
