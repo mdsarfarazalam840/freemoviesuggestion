@@ -1,24 +1,13 @@
-<<<<<<< .gitlab-ci.yml
 # GitLab CI/CD Pipeline — Astro + Cloudflare Workers
 # Required CI/CD Variables (Settings > CI/CD > Variables):
 #   CLOUDFLARE_API_TOKEN     — Cloudflare API token with "Workers:Edit" permission
 #   CLOUDFLARE_ACCOUNT_ID    — Your Cloudflare account ID
 #   SUPABASE_URL             — Supabase project URL
 #   SUPABASE_SERVICE_ROLE_KEY — Supabase service role key
-=======
->>>>>>> .gitlab-ci.yml
 #   UPSTASH_REDIS_REST_URL   — Upstash Redis REST URL
 #   UPSTASH_REDIS_REST_TOKEN — Upstash Redis REST token
 #   TMDB_API_KEY             — TMDB API key
 
-<<<<<<< .gitlab-ci.yml
-=======
-# NOTE: We do NOT cache node_modules because @astrojs/cloudflare depends on
-# @cloudflare/workerd-linux-64, a platform-specific optional binary that is
-# stripped out when the cache is created on one runner and restored on another.
-# Running `npm ci` fresh in every job is the only reliable approach.
-
->>>>>>> .gitlab-ci.yml
 # IMPORTANT: Must use node:22 (Debian/glibc) NOT node:22-alpine (musl libc).
 # @astrojs/cloudflare depends on @cloudflare/workerd-linux-64 which is a
 # glibc binary and will not run on Alpine Linux.
@@ -35,10 +24,6 @@ test:typecheck:
   stage: test
   script:
     - npm ci
-<<<<<<< .gitlab-ci.yml
-=======
-    # Use tsc directly — astro check tries to boot the workerd runtime
->>>>>>> .gitlab-ci.yml
     - npx tsc --noEmit
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
@@ -50,11 +35,7 @@ build:astro:
   stage: build
   variables:
     SUPABASE_URL: $SUPABASE_URL
-<<<<<<< .gitlab-ci.yml
     SUPABASE_SERVICE_ROLE_KEY: $SUPABASE_SERVICE_ROLE_KEY
-=======
-    SUPABASE_KEY: $SUPABASE_KEY
->>>>>>> .gitlab-ci.yml
     UPSTASH_REDIS_REST_URL: $UPSTASH_REDIS_REST_URL
     UPSTASH_REDIS_REST_TOKEN: $UPSTASH_REDIS_REST_TOKEN
     TMDB_API_KEY: $TMDB_API_KEY
@@ -82,7 +63,6 @@ deploy:preview:
         exit 1
       fi
     - npm ci
-<<<<<<< .gitlab-ci.yml
     # Set secrets for preview environment
     - |
       echo "$SUPABASE_URL" | npx wrangler secret put SUPABASE_URL --name freemoviesuggestion-$CI_COMMIT_REF_SLUG 2>/dev/null || true
@@ -94,12 +74,6 @@ deploy:preview:
   environment:
     name: preview/$CI_COMMIT_REF_SLUG
     url: https://freemoviesuggestion-$CI_COMMIT_REF_SLUG.$CI_COMMIT_REF_SLUG.workers.dev
-=======
-    - npx wrangler deploy --config dist/server/wrangler.json --name freemoviesuggestion-$CI_COMMIT_REF_SLUG --keep-vars
-  environment:
-    name: preview/$CI_COMMIT_REF_SLUG
-    url: https://$CI_COMMIT_REF_SLUG.freemoviesuggestion.pages.dev
->>>>>>> .gitlab-ci.yml
     on_stop: deploy:preview:stop
     auto_stop_in: 7 days
   rules:
@@ -132,7 +106,6 @@ deploy:production:
         exit 1
       fi
     - npm ci
-<<<<<<< .gitlab-ci.yml
     # Create KV namespace if it doesn't exist and update wrangler.json
     - |
       EXISTING_KV=$(npx wrangler kv namespace list 2>/dev/null | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
@@ -158,11 +131,5 @@ deploy:production:
   environment:
     name: production
     url: https://freemoviesuggestion.${CI_COMMIT_REF_SLUG}.workers.dev
-=======
-    - npx wrangler deploy --config dist/server/wrangler.json --keep-vars
-  environment:
-    name: production
-    url: https://freemoviesuggestion.com
->>>>>>> .gitlab-ci.yml
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
