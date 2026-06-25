@@ -4,7 +4,6 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "assets": {
-    "binding": "ASSETS",
     "directory": "dist/client"
   },
   "kv_namespaces": [

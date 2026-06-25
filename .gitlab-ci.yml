@@ -74,12 +74,12 @@ deploy:preview:
     - npm ci
     # Set secrets for preview environment (using stdin redirection)
     - |
-      printf '%s' "$SUPABASE_URL" | npx wrangler secret put SUPABASE_URL --name freemoviesuggestion-$CI_COMMIT_REF_SLUG 2>/dev/null || true
-      printf '%s' "$SUPABASE_SERVICE_ROLE_KEY" | npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --name freemoviesuggestion-$CI_COMMIT_REF_SLUG 2>/dev/null || true
-      printf '%s' "$UPSTASH_REDIS_REST_URL" | npx wrangler secret put UPSTASH_REDIS_REST_URL --name freemoviesuggestion-$CI_COMMIT_REF_SLUG 2>/dev/null || true
-      printf '%s' "$UPSTASH_REDIS_REST_TOKEN" | npx wrangler secret put UPSTASH_REDIS_REST_TOKEN --name freemoviesuggestion-$CI_COMMIT_REF_SLUG 2>/dev/null || true
-      printf '%s' "$TMDB_API_KEY" | npx wrangler secret put TMDB_API_KEY --name freemoviesuggestion-$CI_COMMIT_REF_SLUG 2>/dev/null || true
-    - npx wrangler deploy --name freemoviesuggestion-$CI_COMMIT_REF_SLUG --keep-vars 
+      printf '%s' "$SUPABASE_URL" | npx wrangler secret put SUPABASE_URL --name freemoviesuggestion-$CI_COMMIT_REF_SLUG --config dist/server/wrangler.json 2>/dev/null || true
+      printf '%s' "$SUPABASE_SERVICE_ROLE_KEY" | npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --name freemoviesuggestion-$CI_COMMIT_REF_SLUG --config dist/server/wrangler.json 2>/dev/null || true
+      printf '%s' "$UPSTASH_REDIS_REST_URL" | npx wrangler secret put UPSTASH_REDIS_REST_URL --name freemoviesuggestion-$CI_COMMIT_REF_SLUG --config dist/server/wrangler.json 2>/dev/null || true
+      printf '%s' "$UPSTASH_REDIS_REST_TOKEN" | npx wrangler secret put UPSTASH_REDIS_REST_TOKEN --name freemoviesuggestion-$CI_COMMIT_REF_SLUG --config dist/server/wrangler.json 2>/dev/null || true
+      printf '%s' "$TMDB_API_KEY" | npx wrangler secret put TMDB_API_KEY --name freemoviesuggestion-$CI_COMMIT_REF_SLUG --config dist/server/wrangler.json 2>/dev/null || true
+    - npx wrangler deploy --name freemoviesuggestion-$CI_COMMIT_REF_SLUG --config dist/server/wrangler.json --keep-vars
   environment:
     name: preview/$CI_COMMIT_REF_SLUG
     url: https://freemoviesuggestion-$CI_COMMIT_REF_SLUG.$CI_COMMIT_REF_SLUG.workers.dev
@@ -130,12 +130,12 @@ deploy:production:
     - npm ci
     # Create KV namespace if it doesn't exist and update wrangler.json
     - |
-      EXISTING_KV=$(npx wrangler kv namespace list 2>&1 | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
+      EXISTING_KV=$(npx wrangler kv namespace list --config dist/server/wrangler.json 2>&1 | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
       echo "Existing KV: $EXISTING_KV"
       if [ -z "$EXISTING_KV" ]; then
         echo "Creating SESSION KV namespace..."
-        npx wrangler kv namespace create SESSION --update-config
-        KV_ID=$(npx wrangler kv namespace list 2>&1 | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+        npx wrangler kv namespace create SESSION --update-config --config dist/server/wrangler.json
+        KV_ID=$(npx wrangler kv namespace list --config dist/server/wrangler.json 2>&1 | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
         echo "Created KV namespace: $KV_ID"
       else
         KV_ID="$EXISTING_KV"
@@ -143,12 +143,12 @@ deploy:production:
       fi
     # Set secrets for production (using stdin redirection)
     - |
-      printf '%s' "$SUPABASE_URL" | npx wrangler secret put SUPABASE_URL --name freemoviesuggestion 2>/dev/null || true
-      printf '%s' "$SUPABASE_SERVICE_ROLE_KEY" | npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --name freemoviesuggestion 2>/dev/null || true
-      printf '%s' "$UPSTASH_REDIS_REST_URL" | npx wrangler secret put UPSTASH_REDIS_REST_URL --name freemoviesuggestion 2>/dev/null || true
-      printf '%s' "$UPSTASH_REDIS_REST_TOKEN" | npx wrangler secret put UPSTASH_REDIS_REST_TOKEN --name freemoviesuggestion 2>/dev/null || true
-      printf '%s' "$TMDB_API_KEY" | npx wrangler secret put TMDB_API_KEY --name freemoviesuggestion 2>/dev/null || true
-    - npx wrangler deploy --keep-vars 
+      printf '%s' "$SUPABASE_URL" | npx wrangler secret put SUPABASE_URL --name freemoviesuggestion --config dist/server/wrangler.json 2>/dev/null || true
+      printf '%s' "$SUPABASE_SERVICE_ROLE_KEY" | npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --name freemoviesuggestion --config dist/server/wrangler.json 2>/dev/null || true
+      printf '%s' "$UPSTASH_REDIS_REST_URL" | npx wrangler secret put UPSTASH_REDIS_REST_URL --name freemoviesuggestion --config dist/server/wrangler.json 2>/dev/null || true
+      printf '%s' "$UPSTASH_REDIS_REST_TOKEN" | npx wrangler secret put UPSTASH_REDIS_REST_TOKEN --name freemoviesuggestion --config dist/server/wrangler.json 2>/dev/null || true
+      printf '%s' "$TMDB_API_KEY" | npx wrangler secret put TMDB_API_KEY --name freemoviesuggestion --config dist/server/wrangler.json 2>/dev/null || true
+    - npx wrangler deploy --config dist/server/wrangler.json --keep-vars
   environment:
     name: production
     url: https://freemoviesuggestion.${CI_COMMIT_REF_SLUG}.workers.dev
