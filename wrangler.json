@@ -8,8 +8,7 @@
   },
   "kv_namespaces": [
     {
-      "binding": "SESSION",
-      "id": "auto-created-by-ci"
+      "binding": "SESSION"
     }
   ],
   "triggers": {

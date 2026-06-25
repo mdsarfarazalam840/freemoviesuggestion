@@ -128,19 +128,6 @@ deploy:production:
         exit 1
       fi
     - npm ci
-    # Create KV namespace if it doesn't exist and update wrangler.json
-    - |
-      EXISTING_KV=$(npx wrangler kv namespace list --config dist/server/wrangler.json 2>&1 | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4 || true)
-      echo "Existing KV: $EXISTING_KV"
-      if [ -z "$EXISTING_KV" ]; then
-        echo "Creating SESSION KV namespace..."
-        npx wrangler kv namespace create SESSION --update-config --config dist/server/wrangler.json
-        KV_ID=$(npx wrangler kv namespace list --config dist/server/wrangler.json 2>&1 | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-        echo "Created KV namespace: $KV_ID"
-      else
-        KV_ID="$EXISTING_KV"
-        echo "Using existing KV namespace: $KV_ID"
-      fi
     # Set secrets for production (using stdin redirection)
     - |
       printf '%s' "$SUPABASE_URL" | npx wrangler secret put SUPABASE_URL --name freemoviesuggestion --config dist/server/wrangler.json 2>/dev/null || true
