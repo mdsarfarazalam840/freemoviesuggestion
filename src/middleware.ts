@@ -9,5 +9,10 @@ export const onRequest = defineMiddleware(async (_context, next) => {
       }
     }
   }
-  return next();
+  try {
+    return await next();
+  } catch (error) {
+    console.error('[Middleware] Unhandled error:', error);
+    return new Response('Internal Server Error', { status: 500 });
+  }
 });
