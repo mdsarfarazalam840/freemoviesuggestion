@@ -1,11 +1,17 @@
 import { defineMiddleware } from 'astro:middleware';
-import { env } from 'cloudflare:workers';
+
 
 export const onRequest = defineMiddleware(async (_context, next) => {
-  if (env) {
-    for (const [key, value] of Object.entries(env)) {
+  // @ts-ignore - CF runtime env
+  const cfEnv = _context.locals?.runtime?.env;
+  if (cfEnv) {
+    if (typeof globalThis.process === 'undefined') {
+      // @ts-ignore
+      globalThis.process = { env: {} };
+    }
+    for (const [key, value] of Object.entries(cfEnv)) {
       if (typeof value === 'string') {
-        process.env[key] = value;
+        globalThis.process.env[key] = value;
       }
     }
   }

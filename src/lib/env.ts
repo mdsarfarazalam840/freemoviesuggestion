@@ -1,6 +1,15 @@
 type EnvMap = Record<string, string | undefined>;
 
 function getEnvValue(name: string): string | undefined {
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    if (name === 'PUBLIC_SUPABASE_URL') return import.meta.env.PUBLIC_SUPABASE_URL;
+    if (name === 'SUPABASE_URL') return import.meta.env.SUPABASE_URL;
+    if (name === 'SUPABASE_SERVICE_ROLE_KEY') return import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (name === 'PUBLIC_SUPABASE_ANON_KEY') return import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+    if (name === 'SUPABASE_KEY') return import.meta.env.SUPABASE_KEY;
+    if (name === 'TMDB_ACCESS_TOKEN') return import.meta.env.TMDB_ACCESS_TOKEN;
+    if (name === 'TMDB_API_KEY') return import.meta.env.TMDB_API_KEY;
+  }
   if (typeof process !== 'undefined' && process.env && process.env[name]) {
     return process.env[name];
   }
