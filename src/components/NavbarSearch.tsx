@@ -66,14 +66,14 @@ const NavbarSearch: React.FC = () => {
     setIsLoading(true);
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=6`);
-      const data: { movies?: Array<{ id: number; title: string; poster_path: string | null; release_date: string; vote_average: number }> } = await res.json();
+      const data: { movies?: Array<{ id: string | number; title: string; slug: string; thumbnail: string; releaseYear: number; rating: number }> } = await res.json();
       const mapped = (data.movies || []).map(m => ({
         id: String(m.id),
         title: m.title,
-        slug: m.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-        releaseYear: m.release_date ? new Date(m.release_date).getFullYear() : 0,
-        thumbnail: m.poster_path ? `https://image.tmdb.org/t/p/w200${m.poster_path}` : '',
-        rating: m.vote_average,
+        slug: m.slug || m.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+        releaseYear: m.releaseYear || 0,
+        thumbnail: m.thumbnail || '',
+        rating: m.rating || 0,
       }));
       setResults(mapped);
       setIsOpen(mapped.length > 0);

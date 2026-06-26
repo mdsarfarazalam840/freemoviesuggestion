@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
 import MovieCardReact from '../components/MovieCard.tsx';
 import Footer from '../components/Footer.astro';
+import { searchMovies } from '../services/movieService';
 
 export const prerender = false;
 
@@ -12,15 +13,11 @@ let count = 0;
 
 if (query) {
   try {
-    const baseUrl = new URL(Astro.url.origin);
-    const apiUrl = new URL('/api/search', baseUrl);
-    apiUrl.searchParams.set('q', query);
-    apiUrl.searchParams.set('limit', '24');
-    const res = await fetch(apiUrl);
-    const data = await res.json();
-    movies = data.movies || [];
-    count = data.count || 0;
-  } catch {
+    const result = await searchMovies(query, { page: 1, limit: 24 });
+    movies = result.movies || [];
+    count = result.count || 0;
+  } catch (error) {
+    console.error('[search.astro] Error:', error);
     movies = [];
     count = 0;
   }

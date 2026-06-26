@@ -6,6 +6,8 @@ interface Props {
   rank?: number;
 }
 
+const PLACEHOLDER_SVG = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450"><rect fill="%231E293B" width="300" height="450"/><text x="150" y="210" font-family="sans-serif" font-size="14" fill="%2394A3B8" text-anchor="middle">No Image</text></svg>`);
+
 export default function MovieCard({ movie, rank }: Props) {
   const ottPlatforms = movie.ottPlatforms || [];
 
@@ -13,7 +15,7 @@ export default function MovieCard({ movie, rank }: Props) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
+      viewport={{ once: true, margin: '100px' }}
       whileHover={{ y: -5 }}
       className="group relative flex flex-col glass-2026 rounded-premium border border-hairline overflow-hidden transition-all duration-300 movie-card"
     >
@@ -27,10 +29,12 @@ export default function MovieCard({ movie, rank }: Props) {
       
       <div className="aspect-[2/3] overflow-hidden bg-canvas-soft-2 pointer-events-none">
         <img 
-          src={movie.thumbnail} 
+          src={movie.thumbnail || PLACEHOLDER_SVG}
           alt={movie.title}
+          width="300"
+          height="450"
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
+          onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_SVG; }}
         />
       </div>
       

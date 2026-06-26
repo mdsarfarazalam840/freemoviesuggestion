@@ -132,7 +132,10 @@ function normalizeMovie(row: MovieRow): Movie {
     id: String(row.id || tmdbId || slug || title),
     title,
     slug,
-    thumbnail: row.thumbnail || (row.poster_path ? `https://image.tmdb.org/t/p/w500${row.poster_path}` : ''),
+    thumbnail: (row.thumbnail && row.thumbnail.trim()) ||
+      (row.poster_path && row.poster_path.trim()
+        ? `https://image.tmdb.org/t/p/w500${row.poster_path.trim()}`
+        : ''),
     rating: row.rating ?? row.vote_average ?? 0,
     description: row.description || row.overview || '',
     releaseYear: Number.isFinite(releaseYear) ? releaseYear : 0,
@@ -186,7 +189,7 @@ function movieCacheKey(prefix: string, options: MovieQueryOptions = {}) {
     options.topOnly ? 'top:1' : null,
   ].filter(Boolean);
 
-  return `remote_movies:v6:${parts.join(':')}`;
+  return `remote_movies:v7:${parts.join(':')}`;
 }
 
 function matchesFilter(value: string | undefined, filter: string): boolean {
@@ -270,7 +273,7 @@ async function fetchMoviePage(options: MovieQueryOptions = {}): Promise<FetchMov
     .range(from, to);
 
   if (error) {
-    console.warn('Supabase movie page fetch failed:', error);
+    console.warn('Supabase movie page fetch failed:', error.message, error.code, error.details);
     return getLocalMoviePage(options);
   }
 
@@ -281,7 +284,7 @@ async function fetchMoviePage(options: MovieQueryOptions = {}): Promise<FetchMov
   const { count, error: countError } = await countQuery;
 
   if (countError) {
-    console.warn('Supabase movie count failed:', countError);
+    console.warn('Supabase movie count failed:', countError.message, countError.code);
   }
 
   const safeCount = count ?? data?.length ?? 0;
@@ -299,7 +302,7 @@ export async function getMoviesPage(options: MovieQueryOptions = {}): Promise<Mo
   const cacheKey = movieCacheKey('page', options);
   const cachedData = await getCachedData<MoviePage>(cacheKey);
 
-  if (cachedData && Array.isArray(cachedData.movies)) {
+  if (cachedData && Array.isArray(cachedData.movies) && cachedData.movies.length > 0) {
     return {
       ...cachedData,
       movies: normalizeMovies(cachedData.movies),
@@ -309,7 +312,7 @@ export async function getMoviesPage(options: MovieQueryOptions = {}): Promise<Mo
   const result = await fetchMoviePage(options);
   const { isFallback, ...pageResult } = result;
 
-  if (!isFallback) {
+  if (!isFallback && pageResult.movies.length > 0) {
     await setCachedData(cacheKey, pageResult);
   }
 
@@ -415,7 +418,7 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
     };
   }
 
-  const { data, error, count } = await supabase
+  let { data, error, count } = await supabase
     .from('movies')
     .select('*', { count: 'exact' })
     .textSearch('fts', searchTerm, { type: 'websearch', config: 'english' })
@@ -423,7 +426,29 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
     .range(from, to);
 
   if (error) {
-    console.warn(`Supabase search failed for ${searchTerm}:`, error);
+    console.warn(`[search] textSearch failed for "${searchTerm}":`, error.message, error.code);
+  }
+
+  if (error || !data || data.length === 0) {
+    const ilikePattern = `%${searchTerm}%`;
+    const fallback = await supabase
+      .from('movies')
+      .select('*', { count: 'exact' })
+      .or(`title.ilike.${ilikePattern},overview.ilike.${ilikePattern}`)
+      .order('popularity', { ascending: false })
+      .range(from, to);
+
+    if (!fallback.error && fallback.data && fallback.data.length > 0) {
+      console.log(`[search] ilike fallback returned ${fallback.data.length} results for "${searchTerm}"`);
+      data = fallback.data;
+      count = fallback.count;
+    } else if (error) {
+      console.warn(`[search] ilike fallback also failed for "${searchTerm}":`, fallback.error?.message);
+    }
+  }
+
+  if (!data || data.length === 0) {
+    console.warn(`[search] No results for "${searchTerm}" from Supabase, falling back to local`);
     const localResults = localMovies.filter(
       (m) =>
         m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -439,6 +464,11 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
     };
   }
 
+  if (data.length > 0) {
+    const sample = data[0] as any;
+    console.log(`[search] First result: title="${sample.title}", thumbnail="${sample.thumbnail}", poster_path="${sample.poster_path}"`);
+  }
+
   const safeCount = count || 0;
   const result = {
     movies: normalizeMovies(data),
@@ -448,7 +478,12 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
     totalPages: Math.ceil(safeCount / limit),
   };
 
-  await setCachedData(cacheKey, result, 3600); // 1 hour search cache
+  const hasEmptyThumbnails = result.movies.some((m) => !m.thumbnail);
+  if (hasEmptyThumbnails) {
+    console.warn(`[search] ${result.movies.filter((m) => !m.thumbnail).length}/${result.movies.length} movies have empty thumbnails for "${searchTerm}" — skipping cache`);
+  } else {
+    await setCachedData(cacheKey, result, 3600);
+  }
 
   return result;
 }
