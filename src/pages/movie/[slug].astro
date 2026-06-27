@@ -7,7 +7,13 @@ import { getMovieBySlug } from '../../services/movieService';
 export const prerender = false;
 
 const { slug } = Astro.params;
-const movie = slug ? await getMovieBySlug(slug) : null;
+let movie: any = null;
+try {
+  movie = slug ? await getMovieBySlug(slug) : null;
+} catch (error) {
+  console.error('[movie/[slug].astro] Error:', error);
+  Astro.response.status = 500;
+}
 
 if (!movie) {
   Astro.response.status = 404;

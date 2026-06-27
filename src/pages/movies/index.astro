@@ -11,7 +11,13 @@ export const prerender = false;
 const page = Number(Astro.url.searchParams.get('page') || '1');
 const selectedGenre = Astro.url.searchParams.get('genre');
 const selectedOtt = Astro.url.searchParams.get('ott');
-const pageData = await getMoviesPage({ page, limit: 24, genre: selectedGenre, ott: selectedOtt });
+let pageData = { movies: [] as any[], count: 0, page: 1, limit: 24, totalPages: 0 };
+try {
+  pageData = await getMoviesPage({ page, limit: 24, genre: selectedGenre, ott: selectedOtt });
+} catch (error) {
+  console.error('[movies/index.astro] Error:', error);
+  Astro.response.status = 500;
+}
 const filteredMovies = pageData.movies;
 const buildPageHref = (nextPage: number) => {
   const params = new URLSearchParams();

@@ -12,7 +12,13 @@ const { ott } = Astro.params;
 const normalizeOttSlug = (value = '') => value.toLowerCase().trim().replace(/\+/g, 'plus').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 const ottLabel = OTT_PLATFORMS.find((platform) => normalizeOttSlug(platform.name) === normalizeOttSlug(ott))?.name || ott;
 const page = Number(Astro.url.searchParams.get('page') || '1');
-const pageData = await getMoviesPage({ page, limit: 24, ott: ottLabel });
+let pageData = { movies: [] as any[], count: 0, page: 1, limit: 24, totalPages: 0 };
+try {
+  pageData = await getMoviesPage({ page, limit: 24, ott: ottLabel });
+} catch (error) {
+  console.error('[ott/[ott].astro] Error:', error);
+  Astro.response.status = 500;
+}
 const filteredMovies = pageData.movies;
 const pageHref = (nextPage: number) => nextPage > 1 ? `/ott/${ott}?page=${nextPage}` : `/ott/${ott}`;
 ---

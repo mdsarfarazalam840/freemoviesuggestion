@@ -13,7 +13,13 @@ const currentGenre = genre || '';
 const normalizeGenreSlug = (value = '') => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 const genreLabel = GENRES.find((item) => normalizeGenreSlug(item) === normalizeGenreSlug(currentGenre)) || currentGenre.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 const page = Number(Astro.url.searchParams.get('page') || '1');
-const pageData = await getMoviesPage({ page, limit: 24, genre: genreLabel });
+let pageData = { movies: [] as any[], count: 0, page: 1, limit: 24, totalPages: 0 };
+try {
+  pageData = await getMoviesPage({ page, limit: 24, genre: genreLabel });
+} catch (error) {
+  console.error('[genre/[genre].astro] Error:', error);
+  Astro.response.status = 500;
+}
 const filteredMovies = pageData.movies;
 const pageHref = (nextPage: number) => nextPage > 1 ? `/genre/${currentGenre}?page=${nextPage}` : `/genre/${currentGenre}`;
 ---
