@@ -27,7 +27,9 @@ const TMDB_GENRES = new Map<number, string>([
 
 const SYNC_SCHEMA_VERSION = 4;
 const TODAY = new Date().toISOString().slice(0, 10);
-const SYNC_FULL_DETAILS = process.env.SYNC_FULL_DETAILS === 'true';
+const SYNC_FULL_DETAILS = () => {
+  try { return process.env.SYNC_FULL_DETAILS === 'true'; } catch { return false; }
+};
 
 type SyncProgress = {
   version: number;
@@ -249,15 +251,22 @@ export async function syncMovies(targetCount = 1000) {
     failed: 0
   };
 
+  const MAX_PAGES_PER_RUN = (() => {
+    try {
+      if (process.env.DISABLE_PAGE_LIMIT === 'true') return Infinity;
+    } catch {}
+    return 17;
+  })();
+  let pagesProcessed = 0;
+
   console.log(`Starting/Resuming sync from source ${sourceIndex + 1}/${sources.length}, page ${sourcePage}, target: ${targetCount} movies.`);
 
-  while (totalSynced < targetCount && sourceIndex < sources.length) {
+  while (totalSynced < targetCount && sourceIndex < sources.length && pagesProcessed < MAX_PAGES_PER_RUN) {
     const source = sources[sourceIndex];
 
     if (sourcePage > source.maxPages) {
       sourceIndex++;
       sourcePage = 1;
-      await saveProgress(sourceIndex, sourcePage, totalSynced);
       continue;
     }
 
@@ -267,7 +276,6 @@ export async function syncMovies(targetCount = 1000) {
       console.log(`No more movies found for source "${source.name}".`);
       sourceIndex++;
       sourcePage = 1;
-      await saveProgress(sourceIndex, sourcePage, totalSynced);
       continue;
     }
 
@@ -275,7 +283,6 @@ export async function syncMovies(targetCount = 1000) {
     for (const basicMovie of data.results) {
       if (totalSynced + movieBatch.length >= targetCount) break;
 
-      // Filter as per PLAN.md
       if (basicMovie.adult || !basicMovie.poster_path || !basicMovie.release_date) {
         stats.skipped++;
         continue;
@@ -283,14 +290,13 @@ export async function syncMovies(targetCount = 1000) {
 
       try {
         stats.fetched++;
-        const movie = SYNC_FULL_DETAILS ? await fetchMovieFullDetails(basicMovie.id) : basicMovie;
+        const movie = SYNC_FULL_DETAILS() ? await fetchMovieFullDetails(basicMovie.id) : basicMovie;
         const region = source.region || getRegionForLanguage(movie.original_language);
 
         const mapped = mapTmdbMovie(movie, region, totalSynced + movieBatch.length);
         movieBatch.push(mapped);
         
-        if (SYNC_FULL_DETAILS) {
-          // Keep detail mode conservative because it performs one extra TMDB request per movie.
+        if (SYNC_FULL_DETAILS()) {
           await new Promise(resolve => setTimeout(resolve, 500));
         }
       } catch (err) {
@@ -311,31 +317,28 @@ export async function syncMovies(targetCount = 1000) {
     }
 
     sourcePage++;
-    await saveProgress(sourceIndex, sourcePage, totalSynced);
+    pagesProcessed++;
     
-    console.log(`Status: ${totalSynced}/${targetCount} movies processed. Stats:`, stats);
-    
-    // Clear caches after each batch
-    await clearRedisCache();
+    console.log(`Status: ${totalSynced}/${targetCount} movies processed (page ${pagesProcessed}/${MAX_PAGES_PER_RUN}). Stats:`, stats);
   }
 
-  console.log('Sync finished.');
+  await saveProgress(sourceIndex, sourcePage, totalSynced);
+  await clearRedisCache();
+
+  if (totalSynced >= targetCount) {
+    console.log(`Sync target of ${targetCount} movies reached.`);
+  } else if (pagesProcessed >= MAX_PAGES_PER_RUN) {
+    console.log(`Paused after ${pagesProcessed} pages (subrequest budget). Resuming next cron.`);
+  }
   console.log('Final Stats:', stats);
   return stats;
 }
 
 async function clearRedisCache() {
   try {
-    const patterns = ['trending_movies', 'all_movies', 'bollywood_movies', 'tollywood_movies', 'remote_movies:*'];
-    const seen = new Set<string>();
-    for (const pattern of patterns) {
-      const matched = await redis.keys(pattern);
-      for (const key of matched) {
-        if (seen.has(key)) continue;
-        seen.add(key);
-        await redis.del(key).catch(() => {});
-      }
-    }
+    const knownKeys = ['sync_progress', 'trending_movies', 'all_movies', 'bollywood_movies', 'tollywood_movies'];
+    const matched = await redis.keys('remote_movies:*');
+    await redis.del(...knownKeys, ...matched);
   } catch (err) {
     console.warn('Failed to clear some Redis caches:', err);
   }
@@ -393,8 +396,6 @@ export async function syncTrendingMovies() {
 
   const { error } = await supabase.from('movies').upsert(movieBatch, { onConflict: 'tmdb_id' });
   if (error) throw error;
-  
-  await clearRedisCache();
   
   console.log(`Successfully synced ${movieBatch.length} trending movies.`);
 }
