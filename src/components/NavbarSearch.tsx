@@ -66,9 +66,17 @@ const NavbarSearch: React.FC = () => {
     setIsLoading(true);
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=6`);
-      const data = await res.json();
-      setResults(data.movies || []);
-      setIsOpen((data.movies?.length || 0) > 0);
+      const data: { movies?: Array<{ id: string | number; title: string; slug: string; thumbnail: string; releaseYear: number; rating: number }> } = await res.json();
+      const mapped = (data.movies || []).map(m => ({
+        id: String(m.id),
+        title: m.title,
+        slug: m.slug || m.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+        releaseYear: m.releaseYear || 0,
+        thumbnail: m.thumbnail || '',
+        rating: m.rating || 0,
+      }));
+      setResults(mapped);
+      setIsOpen(mapped.length > 0);
       setSelectedIndex(-1);
     } catch (error) {
       console.error('Search error:', error);

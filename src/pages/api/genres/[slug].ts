@@ -7,39 +7,47 @@ const CACHE_TTL = 3600; // 1 hour
 export const prerender = false;
 
 export const GET: APIRoute = async ({ params, url }) => {
-  const { slug } = params;
-  const page = parseInt(url.searchParams.get('page') || '1', 10);
-  const limit = parseInt(url.searchParams.get('limit') || '24', 10);
+  try {
+    const { slug } = params;
+    const page = parseInt(url.searchParams.get('page') || '1', 10);
+    const limit = parseInt(url.searchParams.get('limit') || '24', 10);
 
-  if (!slug) return new Response('Missing genre slug', { status: 400 });
+    if (!slug) return new Response('Missing genre slug', { status: 400 });
 
-  const cacheKey = `genre:v2:${slug}:p${page}:l${limit}`;
-  const cached = await getCachedData<any>(cacheKey);
+    const cacheKey = `genre:v2:${slug}:p${page}:l${limit}`;
+    const cached = await getCachedData<any>(cacheKey);
 
-  if (cached) {
-    return new Response(JSON.stringify(cached), {
+    if (cached) {
+      return new Response(JSON.stringify(cached), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=300, s-maxage=3600',
+          'X-Cache': 'HIT'
+        }
+      });
+    }
+
+    // Capitalize first letter as our genres are stored that way
+    const genre = slug.charAt(0).toUpperCase() + slug.slice(1);
+
+    const data = await getMoviesPage({ page, limit, genre });
+
+    await setCachedData(cacheKey, data, CACHE_TTL);
+
+    return new Response(JSON.stringify(data), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=300, s-maxage=3600',
-        'X-Cache': 'HIT'
+        'X-Cache': 'MISS'
       }
     });
+  } catch (error) {
+    console.error('[/api/genres/:slug] Error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error', movies: [], count: 0, page: 1, limit: 24, totalPages: 0 }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
-
-  // Capitalize first letter as our genres are stored that way
-  const genre = slug.charAt(0).toUpperCase() + slug.slice(1);
-
-  const data = await getMoviesPage({ page, limit, genre });
-
-  await setCachedData(cacheKey, data, CACHE_TTL);
-
-  return new Response(JSON.stringify(data), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=300, s-maxage=3600',
-      'X-Cache': 'MISS'
-    }
-  });
 };
