@@ -303,17 +303,22 @@ export async function getMoviesPage(options: MovieQueryOptions = {}): Promise<Mo
   const cachedData = await getCachedData<MoviePage>(cacheKey);
 
   if (cachedData && Array.isArray(cachedData.movies) && cachedData.movies.length > 0) {
+    console.log(`[movies] ✓ Cache HIT for page (${cachedData.movies.length} movies from Upstash)`);
     return {
       ...cachedData,
       movies: normalizeMovies(cachedData.movies),
     };
   }
 
+  console.log(`[movies] Cache MISS for page — querying Supabase...`);
   const result = await fetchMoviePage(options);
   const { isFallback, ...pageResult } = result;
 
-  if (!isFallback && pageResult.movies.length > 0) {
-    await setCachedData(cacheKey, pageResult);
+  // Cache both Supabase and fallback results to avoid repeated queries
+  if (pageResult.movies.length > 0) {
+    const ttl = isFallback ? 900 : 3600; // shorter TTL for fallback data
+    await setCachedData(cacheKey, pageResult, ttl);
+    console.log(`[movies] Cached ${pageResult.movies.length} movies in Upstash (fallback=${!!isFallback})`);
   }
 
   return pageResult;
@@ -412,11 +417,14 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
   const cachedData = await getCachedData<MoviePage>(cacheKey);
 
   if (cachedData && Array.isArray(cachedData.movies)) {
+    console.log(`[search] ✓ Cache HIT for "${searchTerm}" (${cachedData.movies.length} results from Upstash)`);
     return {
       ...cachedData,
       movies: normalizeMovies(cachedData.movies),
     };
   }
+
+  console.log(`[search] Cache MISS for "${searchTerm}" — querying Supabase...`);
 
   let { data, error, count } = await supabase
     .from('movies')
@@ -439,7 +447,6 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
       .range(from, to);
 
     if (!fallback.error && fallback.data && fallback.data.length > 0) {
-      console.log(`[search] ilike fallback returned ${fallback.data.length} results for "${searchTerm}"`);
       data = fallback.data;
       count = fallback.count;
     } else if (error) {
@@ -448,29 +455,29 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
   }
 
   if (!data || data.length === 0) {
-    console.warn(`[search] No results for "${searchTerm}" from Supabase, falling back to local`);
+    console.log(`[search] No Supabase results for "${searchTerm}", using local fallback`);
     const localResults = localMovies.filter(
       (m) =>
         m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
     const safeCount = localResults.length;
-    return {
+    const fallbackResult: MoviePage = {
       movies: localResults.slice(from, from + limit),
       count: safeCount,
       page,
       limit,
       totalPages: Math.ceil(safeCount / limit),
     };
-  }
 
-  if (data.length > 0) {
-    const sample = data[0] as any;
-    console.log(`[search] First result: title="${sample.title}", thumbnail="${sample.thumbnail}", poster_path="${sample.poster_path}"`);
+    // Cache even empty/local results so we don't hit Supabase again for the same query
+    await setCachedData(cacheKey, fallbackResult, 900); // 15 min TTL for fallback
+    console.log(`[search] Cached ${safeCount} local results for "${searchTerm}" in Upstash`);
+    return fallbackResult;
   }
 
   const safeCount = count || 0;
-  const result = {
+  const result: MoviePage = {
     movies: normalizeMovies(data),
     count: safeCount,
     page,
@@ -483,6 +490,7 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
     console.warn(`[search] ${result.movies.filter((m) => !m.thumbnail).length}/${result.movies.length} movies have empty thumbnails for "${searchTerm}" — skipping cache`);
   } else {
     await setCachedData(cacheKey, result, 3600);
+    console.log(`[search] Cached ${result.movies.length} Supabase results for "${searchTerm}" in Upstash`);
   }
 
   return result;

@@ -1,8 +1,10 @@
 import { Redis } from '@upstash/redis/cloudflare';
 
+import { getServerEnv } from './env';
+
 function getRedis(): Redis {
-  const url = import.meta.env.UPSTASH_REDIS_REST_URL || (typeof process !== 'undefined' && process.env.UPSTASH_REDIS_REST_URL) || '';
-  const token = import.meta.env.UPSTASH_REDIS_REST_TOKEN || (typeof process !== 'undefined' && process.env.UPSTASH_REDIS_REST_TOKEN) || '';
+  const url = getServerEnv(['UPSTASH_REDIS_REST_URL']);
+  const token = getServerEnv(['UPSTASH_REDIS_REST_TOKEN']);
   return new Redis({
     url,
     token,

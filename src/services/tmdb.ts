@@ -1,13 +1,16 @@
 import { getTmdbAccessToken } from '../lib/env';
 
-const TMDB_API_KEY = getTmdbAccessToken();
 const BASE_URL = 'https://api.themoviedb.org/3';
+
+function getApiKey(): string {
+  return getTmdbAccessToken();
+}
 
 async function fetchWithRetry(url: string, retries = 3, backoff = 1000): Promise<any> {
   try {
     const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${TMDB_API_KEY}`,
+        Authorization: `Bearer ${getApiKey()}`,
         accept: 'application/json',
       },
     });

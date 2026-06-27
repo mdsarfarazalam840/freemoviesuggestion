@@ -1,17 +1,21 @@
 import { defineMiddleware } from 'astro:middleware';
+import { env as cfEnv } from 'cloudflare:workers';
 
+type EnvMap = Record<string, string | undefined>;
+type ProcessShim = { env: Record<string, string> };
 
 export const onRequest = defineMiddleware(async (_context, next) => {
-  // @ts-ignore - CF runtime env
-  const cfEnv = _context.locals?.runtime?.env;
-  if (cfEnv) {
-    if (typeof globalThis.process === 'undefined') {
-      // @ts-ignore
-      globalThis.process = { env: {} };
-    }
-    for (const [key, value] of Object.entries(cfEnv)) {
-      if (typeof value === 'string') {
-        globalThis.process.env[key] = value;
+  (globalThis as any).__ENV = cfEnv;
+  if (typeof (globalThis as any).process === 'undefined') {
+    (globalThis as any).process = { env: {} };
+  } else if (typeof (globalThis as any).process.env === 'undefined') {
+    (globalThis as any).process.env = {};
+  }
+  for (const [key, value] of Object.entries(cfEnv as EnvMap)) {
+    if (typeof value === 'string') {
+      try {
+        ((globalThis as any).process as ProcessShim).env[key] = value;
+      } catch (e) {
       }
     }
   }

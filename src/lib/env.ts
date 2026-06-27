@@ -9,6 +9,13 @@ function getEnvValue(name: string): string | undefined {
     if (name === 'SUPABASE_KEY') return import.meta.env.SUPABASE_KEY;
     if (name === 'TMDB_ACCESS_TOKEN') return import.meta.env.TMDB_ACCESS_TOKEN;
     if (name === 'TMDB_API_KEY') return import.meta.env.TMDB_API_KEY;
+    if (name === 'UPSTASH_REDIS_REST_URL') return import.meta.env.UPSTASH_REDIS_REST_URL;
+    if (name === 'UPSTASH_REDIS_REST_TOKEN') return import.meta.env.UPSTASH_REDIS_REST_TOKEN;
+  }
+  // @ts-ignore
+  if (typeof globalThis.__ENV !== 'undefined' && globalThis.__ENV[name]) {
+    // @ts-ignore
+    return globalThis.__ENV[name];
   }
   if (typeof process !== 'undefined' && process.env && process.env[name]) {
     return process.env[name];
