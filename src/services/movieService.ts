@@ -361,7 +361,9 @@ export async function getMovieBySlug(slug: string): Promise<Movie | null> {
       .maybeSingle();
 
     if (!prefixError && prefixData) {
-      return normalizeMovie(prefixData);
+      const movie = normalizeMovie(prefixData);
+      await setCachedData(cacheKey, movie, 86400);
+      return movie;
     }
   } else {
     // 3. If slug has ID suffix, try finding by tmdb_id
