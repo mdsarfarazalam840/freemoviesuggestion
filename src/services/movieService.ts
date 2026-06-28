@@ -278,7 +278,7 @@ async function fetchMoviePage(options: MovieQueryOptions = {}): Promise<FetchMov
   }
 
   const countQuery = applyMovieFilters(
-    supabase.from('movies').select('id', { count: 'estimated', head: true }),
+    supabase.from('movies').select('id', { count: 'exact', head: true }),
     options
   );
   const { count, error: countError } = await countQuery;
@@ -289,12 +289,19 @@ async function fetchMoviePage(options: MovieQueryOptions = {}): Promise<FetchMov
 
   const safeCount = count ?? data?.length ?? 0;
 
+  // If we got fewer rows than requested and we're past page 1,
+  // we've hit the actual end — clamp count so totalPages won't inflate
+  const adjustedCount =
+    data && data.length < limit && page > 1
+      ? Math.min(safeCount, from + data.length)
+      : safeCount;
+
   return {
     movies: normalizeMovies(data),
-    count: safeCount,
+    count: adjustedCount,
     page,
     limit,
-    totalPages: Math.ceil(safeCount / limit),
+    totalPages: Math.ceil(adjustedCount / limit),
   };
 }
 
@@ -304,9 +311,12 @@ export async function getMoviesPage(options: MovieQueryOptions = {}): Promise<Mo
 
   if (cachedData && Array.isArray(cachedData.movies) && cachedData.movies.length > 0) {
     console.log(`[movies] ✓ Cache HIT for page (${cachedData.movies.length} movies from Upstash)`);
+    const limit = normalizeLimit(cachedData.limit);
     return {
       ...cachedData,
       movies: normalizeMovies(cachedData.movies),
+      totalPages: Math.ceil((cachedData.count || 0) / limit),
+      limit,
     };
   }
 

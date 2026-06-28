@@ -41,7 +41,7 @@ const categories = [
             <path d="M16.45 3.27L18.98 6.88" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
           </svg>
         </span>
-        <span class="hidden text-xl font-bold tracking-tight text-ink sm:block">Free Movie Suggestion</span>
+        <span class="hidden text-xl font-bold tracking-tight text-ink sm:block md:hidden lg:block">Free Movie Suggestion</span>
       </a>
 
       <div class="hidden md:flex items-center gap-1">
@@ -58,7 +58,7 @@ const categories = [
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300 group-hover/dropdown:rotate-180"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
 
-          <div class="absolute left-0 top-full pt-2 opacity-0 translate-y-2 pointer-events-none group-hover/dropdown:opacity-100 group-hover/dropdown:translate-y-0 group-hover/dropdown:pointer-events-auto transition-all duration-300">
+          <div class="absolute left-0 top-full pt-2 opacity-0 translate-y-2 pointer-events-none group-hover/dropdown:opacity-100 group-hover/dropdown:translate-y-0 group-hover/dropdown:pointer-events-auto transition-all duration-300 z-50">
             <div class="w-80 overflow-hidden rounded-premium border border-hairline bg-canvas p-2 shadow-premium">
               {categories.map(cat => (
                 <a href={cat.href} class="flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-canvas-soft group/item">
@@ -83,7 +83,7 @@ const categories = [
         <ThemeToggle />
         <a
           href="/movies"
-          class="hidden sm:inline-flex h-10 items-center justify-center btn-premium bg-link px-6 text-sm font-semibold text-white hover:bg-link-hover"
+          class="hidden sm:inline-flex h-10 items-center justify-center btn-premium bg-link px-6 text-sm font-semibold text-white hover:bg-link-hover text-nowrap"
         >
           Find Best Movie
         </a>
