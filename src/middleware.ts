@@ -4,7 +4,19 @@ import { env as cfEnv } from 'cloudflare:workers';
 type EnvMap = Record<string, string | undefined>;
 type ProcessShim = { env: Record<string, string> };
 
-export const onRequest = defineMiddleware(async (_context, next) => {
+const CSP = [
+  "default-src 'self'",
+  'script-src https://fonts.googleapis.com https://fonts.gstatic.com',
+  'img-src https://image.tmdb.org data: blob:',
+  'font-src https://fonts.gstatic.com',
+  'style-src https://fonts.googleapis.com',
+  'frame-ancestors https:',
+  'base-uri \'self\'',
+  'form-action \'self\'',
+  'manifest-src \'self\'',
+].join('; ');
+
+export const onRequest = defineMiddleware(async (context, next) => {
   (globalThis as any).__ENV = cfEnv;
   if (typeof (globalThis as any).process === 'undefined') {
     (globalThis as any).process = { env: {} };
@@ -20,7 +32,11 @@ export const onRequest = defineMiddleware(async (_context, next) => {
     }
   }
   try {
-    return await next();
+    const response = await next();
+    response.headers.set('Content-Security-Policy', CSP);
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    return response;
   } catch (error) {
     console.error('[Middleware] Unhandled error:', error);
     return new Response('Internal Server Error', { status: 500 });
