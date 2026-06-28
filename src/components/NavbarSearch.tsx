@@ -103,7 +103,7 @@ const NavbarSearch: React.FC = () => {
   };
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-[280px] focus-within:max-w-[360px] transition-all duration-300">
+    <div ref={containerRef} className="relative w-full max-w-[280px] focus-within:max-w-[360px] transition-all duration-300 md:max-w-[220px] xl:max-w-[280px]">
       <form
         action="/search"
         method="GET"
