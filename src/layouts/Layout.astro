@@ -68,6 +68,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 		})} />
 
 		<script is:inline>
+			document.querySelectorAll('[bis_skin_checked]').forEach(e => e.removeAttribute('bis_skin_checked'));
+		</script>
+		<script is:inline>
 			const getThemePreference = () => {
 				if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
 					return localStorage.getItem('theme');

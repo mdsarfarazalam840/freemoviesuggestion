@@ -1,6 +1,30 @@
 # Free Movie Suggestion
 
+<p align="center">
+  <a href="https://astro.build"><img src="https://img.shields.io/badge/Astro-6.x-BC52EE?logo=astro&logoColor=white" alt="Astro" /></a>
+  <a href="https://reactjs.org"><img src="https://img.shields.io/badge/React-19.x-61DAFB?logo=react&logoColor=white" alt="React" /></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-6.x-3178C6?logo=typescript&logoColor=white" alt="TypeScript" /></a>
+  <a href="https://supabase.com"><img src="https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white" alt="Supabase" /></a>
+  <a href="https://upstash.com"><img src="https://img.shields.io/badge/Upstash%20Redis-00E9A3?logo=upstash&logoColor=white" alt="Upstash Redis" /></a>
+  <a href="https://workers.cloudflare.com"><img src="https://img.shields.io/badge/Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white" alt="Cloudflare Workers" /></a>
+  <a href="https://www.themoviedb.org"><img src="https://img.shields.io/badge/TMDB-01D277?logo=themoviedatabase&logoColor=white" alt="TMDB" /></a>
+  <a href="https://github.com/mdsarfarazalam840/freemoviesuggestion/actions"><img src="https://img.shields.io/github/actions/workflow/status/mdsarfarazalam840/freemoviesuggestion/sync.yml?branch=main&label=Sync&logo=github" alt="Sync Status" /></a>
+  <a href="https://github.com/mdsarfarazalam840/freemoviesuggestion"><img src="https://img.shields.io/github/last-commit/mdsarfarazalam840/freemoviesuggestion?label=Updated&logo=github" alt="Last Commit" /></a>
+</p>
+
 A free-tier-optimized movie suggestion platform built with Astro, React, and Supabase. This tool automatically ingests movie data from TMDB and provides a fast, searchable interface for discovering new movies.
+
+## 📋 Table of Contents
+
+- [Tool Purpose](#-tool-purpose)
+- [Tech Stack](#-tech-stack)
+- [Architecture](#-architecture)
+- [Prerequisites](#-prerequisites)
+- [Genie Commands](#-genie-commands)
+- [Deployment](#-deployment)
+- [Project Structure](#-project-structure)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ## 🚀 Tool Purpose
 The goal of this project is to provide a high-performance, visually appealing movie suggestion site that stays entirely within the free tiers of modern cloud services. It features:
@@ -15,7 +39,7 @@ The goal of this project is to provide a high-performance, visually appealing mo
 - **Animations:** [Framer Motion](https://www.framer.com/motion/), [GSAP](https://greensock.com/gsap/)
 - **Database:** [Supabase](https://supabase.com/) (PostgreSQL)
 - **Cache:** [Upstash Redis](https://upstash.com/)
-- **Deployment:** [Cloudflare Pages](https://pages.cloudflare.com/)
+- **Deployment:** [Cloudflare Workers](https://workers.cloudflare.com/)
 - **Data Source:** [TMDB API](https://www.themoviedb.org/documentation/api)
 
 ## 🏗 Architecture
@@ -28,12 +52,29 @@ The project follows a "Sync-Store-Serve" architecture:
 graph LR
     GH[GitHub Actions] --> |Sync| SB[Supabase]
     TMDB[TMDB API] --> |Data| GH
-    U[User] --> |Request| CP[Cloudflare Pages]
+    U[User] --> |Request| CP[Cloudflare Workers]
     CP --> |Query| UR[Upstash Redis]
     UR --> |Cache Miss| SB
     SB --> CP
     CP --> |Cache Hit| U
 ```
+
+## ✅ Prerequisites
+
+Before running any commands, ensure you have the following installed:
+
+- **Node.js** >= 22.12.0
+- **npm** (ships with Node.js)
+- **Wrangler CLI** — installed as a dev dependency (`npx wrangler`)
+
+You'll also need API keys for the following services (see [Environment Setup](#-contribution)):
+
+| Service       | Required For            |
+| :------------ | :---------------------- |
+| Supabase      | Database & Auth         |
+| TMDB          | Movie data ingestion    |
+| Upstash Redis | Caching layer           |
+| Cloudflare    | Workers deployment      |
 
 ##  Genie Commands
 
@@ -47,6 +88,38 @@ All commands are run from the root of the project:
 | `npm run preview`         | Preview your build locally, before deploying     |
 | `npm run sync`            | Manually trigger movie data synchronization      |
 | `npm run sync -- 1000`    | Sync a specific number of movies (e.g., 1000)    |
+
+## 🚀 Deployment
+
+The project has two deployable components deployed on **Cloudflare Workers**: the **sync worker** (TMDB data ingestion) and the **website** (Astro SSR).
+
+### Sync Worker (TMDB Data Ingestion)
+
+A dedicated Cloudflare Worker (separate from the website) runs daily via Cron Triggers to fetch fresh movie data from TMDB and upsert it into Supabase.
+
+```sh
+# Deploy the sync worker
+npx wrangler deploy --config workers/wrangler.toml --name movie-sync-worker workers/index.ts
+
+# Tail live sync worker logs
+npx wrangler tail --name movie-sync-worker
+```
+
+> The worker is already configured with a `cron` trigger (`0 0 * * *`) in [`workers/wrangler.toml`](./workers/wrangler.toml) so it runs automatically every day at midnight UTC after deployment.
+
+### Website (Astro + Cloudflare Workers)
+
+The Astro site uses the `@astrojs/cloudflare` adapter to output an SSR-ready build deployed as a Cloudflare Worker.
+
+```sh
+# Build the Astro site
+npm run build
+
+# Deploy the website Worker (requires root wrangler.toml with name "movie-sync-worker")
+npx wrangler deploy --config wrangler.toml --name movie-sync-worker
+```
+
+> For production, connect your GitHub repository to Cloudflare via automatic CI/CD deployments on every push to `main`.
 
 ## 🤝 Contribution
 
@@ -89,3 +162,7 @@ All commands are run from the root of the project:
 │   └── styles/        # Global CSS (Tailwind)
 └── package.json
 ```
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).

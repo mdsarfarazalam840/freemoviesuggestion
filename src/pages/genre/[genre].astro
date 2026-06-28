@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import MovieCardReact from '../../components/MovieCard.tsx';
+import Pagination from '../../components/Pagination.astro';
 import Footer from '../../components/Footer.astro';
 import { getMoviesPage } from '../../services/movieService';
 import { GENRES } from '../../data/movies';
@@ -73,13 +74,11 @@ const pageHref = (nextPage: number) => nextPage > 1 ? `/genre/${currentGenre}?pa
           <div class="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {filteredMovies.map(movie => <MovieCardReact client:visible movie={movie} />)}
           </div>
-          {pageData.totalPages > 1 && (
-            <nav class="mt-10 flex items-center justify-between border-t border-hairline pt-6" aria-label="Pagination">
-              <a href={pageHref(pageData.page - 1)} class:list={['text-sm font-medium text-link hover:underline', pageData.page <= 1 && 'pointer-events-none opacity-40']}>Previous</a>
-              <span class="text-sm text-mute">Page {pageData.page} of {pageData.totalPages}</span>
-              <a href={pageHref(pageData.page + 1)} class:list={['text-sm font-medium text-link hover:underline', pageData.page >= pageData.totalPages && 'pointer-events-none opacity-40']}>Next</a>
-            </nav>
-          )}
+          <Pagination
+            currentPage={pageData.page}
+            totalPages={pageData.totalPages}
+            buildPageHref={pageHref}
+          />
         </>
       ) : (
         <div class="py-24 text-center bg-canvas rounded-premium border border-hairline shadow-premium">
