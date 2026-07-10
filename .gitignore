@@ -33,3 +33,4 @@ graphify-*/
 .opencode/
 
 .wrangler/
+.env.docker
