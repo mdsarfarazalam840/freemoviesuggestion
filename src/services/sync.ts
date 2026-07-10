@@ -361,7 +361,10 @@ export async function syncTrendingMovies() {
   // For now, let's just use the existing logic for the quick sync but updated with more fields
   
   const processResults = (results: any[], region: any, limit = 20) => {
-    return results.slice(0, limit).map((m, i) => {
+    return results
+      .filter((m) => m.poster_path) // skip movies without a poster (mirrors syncMovies guard)
+      .slice(0, limit)
+      .map((m, i) => {
       const releaseDate = m.release_date || null;
       return {
         tmdb_id: m.id,

@@ -1,0 +1,17 @@
+services:
+  app:
+    image: ajaysin/freemoviesuggestion:latest
+    build:
+      context: .
+    ports:
+      - "4321:4321"
+    env_file:
+      - .env.docker
+    init: true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4321"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+    restart: unless-stopped

@@ -23,6 +23,10 @@ if (!movie) {
 if (movie && movie.slug !== slug) {
   return Astro.redirect(`/movie/${movie.slug}`);
 }
+
+// Fallback poster (matches MovieCard.astro) for movies with an empty/broken thumbnail
+const PLACEHOLDER_SVG = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450"><rect fill="%23334155" width="300" height="450"/><text x="150" y="210" font-family="sans-serif" font-size="18" font-weight="bold" fill="%23F5C518" text-anchor="middle">No Image</text></svg>');
+const posterSrc = (movie?.thumbnail && movie.thumbnail.trim()) || PLACEHOLDER_SVG;
 ---
 
 <Layout title={movie?.title || 'Movie Not Found'} description={movie?.description || 'The requested movie could not be found.'}>
@@ -32,7 +36,7 @@ if (movie && movie.slug !== slug) {
       "@type": "Movie",
       "name": movie.title,
       "description": movie.description,
-      "image": movie.thumbnail,
+      "image": movie.thumbnail || undefined,
       "datePublished": movie.releaseYear.toString(),
       "genre": movie.genres,
       "aggregateRating": {
@@ -73,20 +77,22 @@ if (movie && movie.slug !== slug) {
     {movie ? (
     <>
     <!-- Hero Banner - 2026 Cinematic -->
-    <div class="relative min-h-[500px] md:min-h-[650px] w-full overflow-hidden">
-      <img 
-        src={movie.thumbnail} 
+    <div class="relative min-h-[380px] sm:min-h-[500px] md:min-h-[650px] w-full overflow-hidden">
+      <img
+        src={posterSrc}
         alt={movie.title}
+        onerror={`this.onerror=null;this.src='${PLACEHOLDER_SVG}'`}
         class="absolute inset-0 h-full w-full object-cover blur-3xl opacity-40 scale-125 transition-transform duration-[20s] ease-linear animate-pulse"
       />
       <div class="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/40 to-transparent"></div>
       
       <div class="relative mx-auto max-w-7xl px-4 h-full flex items-center md:items-end pb-20 sm:px-6 lg:px-8">
         <div class="flex flex-col md:flex-row gap-12 items-center md:items-end w-full">
-          <div class="w-56 sm:w-72 flex-shrink-0 shadow-premium-dark rounded-premium overflow-hidden border-2 border-white/10 bg-canvas group">
-             <img 
-              src={movie.thumbnail} 
+          <div class="w-44 sm:w-56 md:w-72 flex-shrink-0 shadow-premium-dark rounded-premium overflow-hidden border-2 border-white/10 bg-canvas group">
+             <img
+              src={posterSrc}
               alt={movie.title}
+              onerror={`this.onerror=null;this.src='${PLACEHOLDER_SVG}'`}
               class="w-full aspect-[2/3] object-cover transition-transform duration-500 group-hover:scale-105"
             />
           </div>
@@ -97,8 +103,8 @@ if (movie && movie.slug !== slug) {
               </span>
               <span class="text-lg font-bold text-mute">{movie.releaseYear}</span>
             </div>
-            <h1 class="text-5xl sm:text-7xl font-bold tracking-tight text-ink mb-6 drop-shadow-sm">{movie.title}</h1>
-            <div class="flex flex-wrap items-center justify-center md:justify-start gap-8">
+            <h1 class="text-3xl sm:text-5xl lg:text-7xl font-bold tracking-tight text-ink mb-6 drop-shadow-sm break-words">{movie.title}</h1>
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 sm:gap-8">
               <div class="flex items-center gap-3">
                 <div class="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-ink shadow-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
@@ -125,9 +131,9 @@ if (movie && movie.slug !== slug) {
     </div>
 
     <!-- Content - 2026 Layout -->
-    <section class="py-24">
+    <section class="py-16 sm:py-24">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-20">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-20">
           <div class="lg:col-span-8">
             <div class="mb-16">
               <h2 class="text-3xl font-bold text-ink mb-8 flex items-center gap-3">

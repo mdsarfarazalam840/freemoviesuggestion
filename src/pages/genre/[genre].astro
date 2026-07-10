@@ -63,7 +63,7 @@ const pageHref = (nextPage: number) => nextPage > 1 ? `/genre/${currentGenre}?pa
             <li class="text-ink">Genre</li>
           </ol>
         </nav>
-        <h1 class="text-4xl font-bold tracking-tight text-ink">{genreLabel} Movies<span class="text-link">.</span></h1>
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-ink">{genreLabel} Movies<span class="text-link">.</span></h1>
         <p class="mt-4 text-lg text-body max-w-2xl">
           Explore our collection of {genreLabel.toLowerCase()} movies available on various streaming platforms.
         </p>
@@ -71,7 +71,7 @@ const pageHref = (nextPage: number) => nextPage > 1 ? `/genre/${currentGenre}?pa
 
       {filteredMovies.length > 0 ? (
         <>
-          <div class="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          <div class="grid grid-cols-2 gap-3 sm:gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {filteredMovies.map(movie => <MovieCardReact client:visible movie={movie} />)}
           </div>
           <Pagination

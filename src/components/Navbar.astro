@@ -87,7 +87,7 @@ const categories = [
         >
           Find Best Movie
         </a>
-        <button id="menu-toggle" aria-label="Toggle menu" class="md:hidden p-2 text-body hover:text-ink">
+        <button id="menu-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobile-menu" class="md:hidden p-2 text-body hover:text-ink">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </button>
       </div>
@@ -96,7 +96,7 @@ const categories = [
 </nav>
 
 <!-- Mobile Menu -->
-<div id="mobile-menu" class="hidden fixed inset-0 z-50 bg-canvas p-6 pt-24 md:hidden transition-all duration-300 overflow-y-auto">
+<div id="mobile-menu" class="invisible opacity-0 pointer-events-none fixed inset-0 z-50 bg-canvas p-6 pt-24 md:hidden transition-all duration-300 overflow-y-auto">
   <button id="close-menu" aria-label="Close menu" class="absolute top-4 right-4 p-2 text-body hover:text-ink">
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
   </button>
@@ -134,7 +134,7 @@ const categories = [
     </div>
 
     <a href="/movies" class="mt-4 flex h-14 items-center justify-center rounded-premium bg-link text-lg font-bold text-white shadow-glow">
-      Start Discovery
+      Find Best Movie
     </a>
   </div>
 </div>
@@ -146,14 +146,70 @@ const categories = [
   const mobileSearchForm = document.getElementById('mobile-search-form');
   const mobileSearchInput = document.getElementById('mobile-search-input');
 
-  menuToggle?.addEventListener('click', () => {
-    mobileMenu?.classList.remove('hidden');
+  const OPEN_CLASSES = ['opacity-100', 'visible', 'pointer-events-auto'];
+  const CLOSED_CLASSES = ['opacity-0', 'invisible', 'pointer-events-none'];
+
+  function getFocusableElements(container) {
+    return container.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])');
+  }
+
+  function trapFocus(container) {
+    const focusableEls = getFocusableElements(container);
+    if (focusableEls.length === 0) return;
+    const firstFocusable = focusableEls[0];
+    const lastFocusable = focusableEls[focusableEls.length - 1];
+    firstFocusable.focus();
+
+    function handleTab(e) {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey) {
+        if (document.activeElement === firstFocusable) {
+          e.preventDefault();
+          lastFocusable.focus();
+        }
+      } else {
+        if (document.activeElement === lastFocusable) {
+          e.preventDefault();
+          firstFocusable.focus();
+        }
+      }
+    }
+
+    container.addEventListener('keydown', handleTab);
+    return () => container.removeEventListener('keydown', handleTab);
+  }
+
+  let releaseTrap = null;
+
+  function openMenu() {
+    mobileMenu?.classList.remove(...CLOSED_CLASSES);
+    mobileMenu?.classList.add(...OPEN_CLASSES);
+    menuToggle?.setAttribute('aria-expanded', 'true');
     document.body.style.overflow = 'hidden';
+    if (mobileMenu) releaseTrap = trapFocus(mobileMenu);
+  }
+
+  function closeMobileMenu() {
+    mobileMenu?.classList.remove(...OPEN_CLASSES);
+    mobileMenu?.classList.add(...CLOSED_CLASSES);
+    menuToggle?.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+    if (releaseTrap) { releaseTrap(); releaseTrap = null; }
+    menuToggle?.focus();
+  }
+
+  menuToggle?.addEventListener('click', openMenu);
+  closeMenu?.addEventListener('click', closeMobileMenu);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menuToggle?.getAttribute('aria-expanded') === 'true') {
+      closeMobileMenu();
+    }
   });
 
-  closeMenu?.addEventListener('click', () => {
-    mobileMenu?.classList.add('hidden');
-    document.body.style.overflow = '';
+  // Close the menu when a navigation link inside it is tapped (handles same-page anchors)
+  mobileMenu?.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', closeMobileMenu);
   });
 
   mobileSearchForm?.addEventListener('submit', (e) => {
