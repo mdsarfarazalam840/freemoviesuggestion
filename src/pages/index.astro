@@ -35,19 +35,19 @@ try {
 		/>
 
 		<!-- Top 10 Section -->
-		<section class="py-24 bg-canvas">
+		<section class="py-16 sm:py-24 bg-canvas">
 			<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div class="mb-16 flex items-end justify-between">
+				<div class="mb-12 sm:mb-16 flex items-end justify-between">
 					<div>
-						<h2 class="text-4xl font-bold tracking-tight text-ink">Trending Hot Picks</h2>
+						<h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-ink">Trending Hot Picks</h2>
 						<p class="mt-4 text-lg text-body">The most suggested movies across all platforms today.</p>
 					</div>
-					<a href="/movies" class="hidden sm:flex items-center gap-2 text-sm font-bold text-link hover:text-link-hover transition-colors">
+					<a href="/movies" class="flex items-center gap-2 text-sm font-bold text-link hover:text-link-hover transition-colors shrink-0">
 						View Full Catalog <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
 					</a>
 				</div>
 
-				<div class="grid grid-cols-2 gap-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+				<div class="grid grid-cols-2 gap-4 sm:gap-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 					{top10.map((movie) => (
 						<MovieCardAstro movie={movie} rank={movie.rank} />
 					))}
@@ -56,9 +56,9 @@ try {
 		</section>
 
 		<!-- Regions Section -->
-		<section id="regions" class="py-24 bg-canvas-soft border-t border-hairline">
+		<section id="regions" class="py-16 sm:py-24 bg-canvas-soft border-t border-hairline">
 			<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div class="space-y-32">
+				<div class="space-y-20 sm:space-y-32">
 					<!-- Bollywood -->
 					<div>
 						<div class="mb-12 flex items-end justify-between">
@@ -73,7 +73,7 @@ try {
 								Browse All <span class="group-hover:translate-x-1 transition-transform">→</span>
 							</a>
 						</div>
-						<div class="grid grid-cols-2 gap-8 md:grid-cols-4">
+						<div class="grid grid-cols-2 gap-4 sm:gap-8 md:grid-cols-4">
 							{bollywood.map(movie => <MovieCardReact client:visible movie={movie} />)}
 						</div>
 					</div>
@@ -92,7 +92,7 @@ try {
 								Browse All <span class="group-hover:translate-x-1 transition-transform">→</span>
 							</a>
 						</div>
-						<div class="grid grid-cols-2 gap-8 md:grid-cols-4">
+						<div class="grid grid-cols-2 gap-4 sm:gap-8 md:grid-cols-4">
 							{hollywood.map(movie => <MovieCardReact client:visible movie={movie} />)}
 						</div>
 					</div>
@@ -111,7 +111,7 @@ try {
 								Browse All <span class="group-hover:translate-x-1 transition-transform">→</span>
 							</a>
 						</div>
-						<div class="grid grid-cols-2 gap-8 md:grid-cols-4">
+						<div class="grid grid-cols-2 gap-4 sm:gap-8 md:grid-cols-4">
 							{tollywood.map(movie => <MovieCardReact client:visible movie={movie} />)}
 						</div>
 					</div>
@@ -120,17 +120,17 @@ try {
 		</section>
 
 		<!-- Genres Section -->
-		<section id="genres" class="py-24 bg-canvas border-t border-hairline">
+		<section id="genres" class="py-16 sm:py-24 bg-canvas border-t border-hairline">
 			<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div class="mb-16 text-center">
-					<h2 class="text-4xl font-bold tracking-tight text-ink">Popular Genres</h2>
+				<div class="mb-12 sm:mb-16 text-center">
+					<h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-ink">Popular Genres</h2>
 					<p class="mt-4 text-lg text-body">Instant discovery across your favorite categories.</p>
 				</div>
 				<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
 					{GENRES.map(genre => (
 						<a 
 							href={`/genre/${genre.toLowerCase()}`}
-							class="group bento-card flex flex-col items-center justify-center p-8 hover:bg-link hover:border-link transition-all"
+							class="group bento-card flex flex-col items-center justify-center p-5 sm:p-8 hover:bg-link hover:border-link transition-all"
 						>
 							<span class="text-base font-bold text-ink group-hover:text-white">{genre}</span>
 						</a>
@@ -140,7 +140,7 @@ try {
 		</section>
 
 		<!-- OTT Platforms Section -->
-		<section id="ott" class="py-20 bg-canvas-soft border-t border-hairline">
+		<section id="ott" class="py-12 sm:py-20 bg-canvas-soft border-t border-hairline">
 			<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 				<div class="mb-12">
 					<h2 class="text-3xl font-bold tracking-tight text-ink">Streaming Platforms</h2>
@@ -150,7 +150,7 @@ try {
 					{OTT_PLATFORMS.map(ott => (
 						<a 
 							href={`/ott/${ott.name.toLowerCase().replace('+', 'plus').replace(' ', '-')}`}
-							class="group bento-card flex flex-col items-center justify-center p-8 hover:bg-link hover:border-link transition-all"
+							class="group bento-card flex flex-col items-center justify-center p-5 sm:p-8 hover:bg-link hover:border-link transition-all"
 						>
 							<span class="text-base font-bold text-ink group-hover:text-white">{ott.name}</span>
 						</a>
@@ -184,7 +184,7 @@ try {
 			</div>
 		</section>
 		<!-- SEO Content Section -->
-		<section class="py-20 bg-canvas border-t border-hairline">
+		<section class="py-12 sm:py-20 bg-canvas border-t border-hairline">
 			<div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
 				<div class="max-w-none">
 					<h2 class="text-3xl font-bold tracking-tight text-ink mb-8">The Ultimate Guide to Finding Your Next Watch: Free Movie Suggestion Tool</h2>

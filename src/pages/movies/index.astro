@@ -61,20 +61,31 @@ const buildPageHref = (nextPage: number) => {
       </nav>
       <div class="flex flex-col md:flex-row gap-12">
         <!-- Sidebar Filters -->
-        <aside class="w-full md:w-64 space-y-10">
+        <aside class="w-full md:w-64">
+          <button
+            id="filters-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="filter-panel"
+            class="md:hidden mb-4 flex w-full items-center justify-between rounded-premium border border-hairline bg-canvas px-4 py-3 text-sm font-medium text-ink"
+          >
+            <span>Filters</span>
+            <svg id="filters-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div id="filter-panel" class="hidden md:block space-y-10">
           <div>
             <h3 class="text-xs font-mono font-medium uppercase tracking-widest text-mute mb-4">Genres</h3>
             <div class="flex flex-wrap md:flex-col gap-2">
               <a 
                 href={`/movies${selectedOtt ? `?ott=${encodeURIComponent(selectedOtt)}` : ''}`} 
-                class={`px-3 py-1.5 text-sm rounded-pill border transition-all ${!selectedGenre ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+                class={`px-4 py-2 text-sm rounded-pill border transition-all ${!selectedGenre ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
               >
                 All Genres
               </a>
               {GENRES.map(genre => (
                 <a 
                   href={`/movies?genre=${encodeURIComponent(genre)}${selectedOtt ? `&ott=${encodeURIComponent(selectedOtt)}` : ''}`} 
-                  class={`px-3 py-1.5 text-sm rounded-pill border transition-all ${selectedGenre?.toLowerCase() === genre.toLowerCase() ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+                  class={`px-4 py-2 text-sm rounded-pill border transition-all ${selectedGenre?.toLowerCase() === genre.toLowerCase() ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
                 >
                   {genre}
                 </a>
@@ -87,19 +98,20 @@ const buildPageHref = (nextPage: number) => {
             <div class="flex flex-wrap md:flex-col gap-2">
               <a 
                 href={`/movies${selectedGenre ? `?genre=${encodeURIComponent(selectedGenre)}` : ''}`} 
-                class={`px-3 py-1.5 text-sm rounded-pill border transition-all ${!selectedOtt ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+                class={`px-4 py-2 text-sm rounded-pill border transition-all ${!selectedOtt ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
               >
                 All Platforms
               </a>
               {OTT_PLATFORMS.map(ott => (
                 <a 
                   href={`/movies?ott=${encodeURIComponent(ott.name)}${selectedGenre ? `&genre=${encodeURIComponent(selectedGenre)}` : ''}`} 
-                  class={`px-3 py-1.5 text-sm rounded-pill border transition-all ${selectedOtt?.toLowerCase() === ott.name.toLowerCase() ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
+                  class={`px-4 py-2 text-sm rounded-pill border transition-all ${selectedOtt?.toLowerCase() === ott.name.toLowerCase() ? 'bg-ink text-canvas border-ink' : 'bg-canvas text-body border-hairline hover:border-hairline-strong'}`}
                 >
                   {ott.name}
                 </a>
               ))}
             </div>
+          </div>
           </div>
         </aside>
 
@@ -207,4 +219,16 @@ const buildPageHref = (nextPage: number) => {
 
   window.addEventListener('popstate', updateUI);
   document.addEventListener('astro:after-swap', updateUI);
+
+  // Mobile collapsible filters (panel is always visible on md+ via md:block)
+  const filtersToggle = document.getElementById('filters-toggle');
+  const filterPanel = document.getElementById('filter-panel');
+  const filtersChevron = document.getElementById('filters-chevron');
+
+  filtersToggle?.addEventListener('click', () => {
+    const isHidden = filterPanel?.classList.toggle('hidden');
+    const expanded = !isHidden;
+    filtersToggle.setAttribute('aria-expanded', String(expanded));
+    filtersChevron?.classList.toggle('rotate-180', expanded);
+  });
 </script>

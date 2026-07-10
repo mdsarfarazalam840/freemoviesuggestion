@@ -6,7 +6,7 @@ interface Props {
   rank?: number;
 }
 
-const PLACEHOLDER_SVG = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450"><rect fill="%231E293B" width="300" height="450"/><text x="150" y="210" font-family="sans-serif" font-size="14" fill="%2394A3B8" text-anchor="middle">No Image</text></svg>`);
+const PLACEHOLDER_SVG = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450"><rect fill="%23334155" width="300" height="450"/><text x="150" y="210" font-family="sans-serif" font-size="18" font-weight="bold" fill="%23F5C518" text-anchor="middle">No Image</text></svg>`);
 
 export default function MovieCard({ movie, rank }: Props) {
   const ottPlatforms = movie.ottPlatforms || [];
@@ -28,7 +28,7 @@ export default function MovieCard({ movie, rank }: Props) {
         </div>
       )}
       
-      <div className="aspect-[2/3] overflow-hidden bg-canvas-soft-2 pointer-events-none">
+          <div suppressHydrationWarning className="aspect-[2/3] overflow-hidden bg-canvas-soft-2 pointer-events-none">
         <img 
           src={movie.thumbnail || PLACEHOLDER_SVG}
           alt={movie.title}
@@ -39,12 +39,12 @@ export default function MovieCard({ movie, rank }: Props) {
         />
       </div>
       
-      <div className="p-4 flex flex-col flex-1 relative z-20 pointer-events-none">
-        <div className="flex items-center justify-between gap-2 mb-1">
+      <div suppressHydrationWarning className="p-4 flex flex-col flex-1 relative z-20 pointer-events-none">
+          <div suppressHydrationWarning className="flex items-center justify-between gap-2 mb-1">
           <span className="text-[10px] font-mono font-medium uppercase tracking-wider text-mute">
             {movie.region} • {movie.releaseYear}
           </span>
-          <div className="flex items-center gap-1">
+            <div suppressHydrationWarning className="flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-warning"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <span className="text-xs font-semibold text-ink">{movie.rating}</span>
           </div>
@@ -54,7 +54,7 @@ export default function MovieCard({ movie, rank }: Props) {
           {movie.title}
         </h3>
         
-        <div className="mt-2 flex flex-wrap gap-1 pointer-events-auto">
+          <div suppressHydrationWarning className="mt-2 flex flex-wrap gap-1 pointer-events-auto">
           {movie.genres.map(genre => (
             <a 
               key={genre}
@@ -70,7 +70,7 @@ export default function MovieCard({ movie, rank }: Props) {
           {movie.description}
         </p>
         
-        <div className="mt-4 flex flex-wrap gap-2 pt-4 border-t border-hairline pointer-events-auto">
+          <div suppressHydrationWarning className="mt-4 flex flex-wrap gap-2 pt-4 border-t border-hairline pointer-events-auto">
           {ottPlatforms.slice(0, 3).map(platform => (
             <a 
               key={platform.name}

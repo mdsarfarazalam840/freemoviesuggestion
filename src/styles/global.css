@@ -112,3 +112,15 @@
   }
 }
 
+@utility text-fluid-hero {
+  font-size: clamp(2rem, 5vw, 4.5rem);
+}
+
+@utility text-fluid-section {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+@utility text-fluid-card {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+}
+

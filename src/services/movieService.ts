@@ -324,8 +324,13 @@ export async function getMoviesPage(options: MovieQueryOptions = {}): Promise<Mo
   const result = await fetchMoviePage(options);
   const { isFallback, ...pageResult } = result;
 
-  // Cache both Supabase and fallback results to avoid repeated queries
-  if (pageResult.movies.length > 0) {
+  // Cache both Supabase and fallback results to avoid repeated queries.
+  // Skip caching pages that contain empty thumbnails so bad data isn't served repeatedly
+  // (mirrors the guard in searchMovies).
+  const hasEmptyThumbnails = pageResult.movies.some((m) => !m.thumbnail);
+  if (pageResult.movies.length > 0 && hasEmptyThumbnails) {
+    console.warn(`[movies] ${pageResult.movies.filter((m) => !m.thumbnail).length}/${pageResult.movies.length} movies have empty thumbnails — skipping cache`);
+  } else if (pageResult.movies.length > 0) {
     const ttl = isFallback ? 900 : 3600; // shorter TTL for fallback data
     await setCachedData(cacheKey, pageResult, ttl);
     console.log(`[movies] Cached ${pageResult.movies.length} movies in Upstash (fallback=${!!isFallback})`);

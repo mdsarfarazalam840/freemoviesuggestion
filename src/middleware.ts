@@ -6,14 +6,14 @@ type ProcessShim = { env: Record<string, string> };
 
 const CSP = [
   "default-src 'self'",
-  'script-src https://fonts.googleapis.com https://fonts.gstatic.com',
-  'img-src https://image.tmdb.org data: blob:',
-  'font-src https://fonts.gstatic.com',
-  'style-src https://fonts.googleapis.com',
+  "script-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com",
+  "img-src 'self' https://image.tmdb.org data: blob:",
+  "font-src 'self' https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   'frame-ancestors https:',
-  'base-uri \'self\'',
-  'form-action \'self\'',
-  'manifest-src \'self\'',
+  "base-uri 'self'",
+  "form-action 'self'",
+  "manifest-src 'self'",
 ].join('; ');
 
 export const onRequest = defineMiddleware(async (context, next) => {

@@ -34,3 +34,5 @@ graphify-*/
 
 .wrangler/
 .env.docker
+
+test_*
