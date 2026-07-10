@@ -189,7 +189,7 @@ function movieCacheKey(prefix: string, options: MovieQueryOptions = {}) {
     options.topOnly ? 'top:1' : null,
   ].filter(Boolean);
 
-  return `remote_movies:v7:${parts.join(':')}`;
+  return `remote_movies:v8:${parts.join(':')}`;
 }
 
 function matchesFilter(value: string | undefined, filter: string): boolean {
@@ -268,6 +268,8 @@ async function fetchMoviePage(options: MovieQueryOptions = {}): Promise<FetchMov
 
   const pageQuery = applyMovieFilters(supabase.from('movies').select('*'), options);
   const { data, error } = await pageQuery
+    .not('poster_path', 'is', null)
+    .not('poster_path', 'eq', '')
     .order('rank', { ascending: true, nullsFirst: false })
     .order('release_date', { ascending: false, nullsFirst: false })
     .range(from, to);
@@ -280,7 +282,9 @@ async function fetchMoviePage(options: MovieQueryOptions = {}): Promise<FetchMov
   const countQuery = applyMovieFilters(
     supabase.from('movies').select('id', { count: 'exact', head: true }),
     options
-  );
+  )
+    .not('poster_path', 'is', null)
+    .not('poster_path', 'eq', '');
   const { count, error: countError } = await countQuery;
 
   if (countError) {
@@ -340,7 +344,7 @@ export async function getMoviesPage(options: MovieQueryOptions = {}): Promise<Mo
 }
 
 export async function getMovieBySlug(slug: string): Promise<Movie | null> {
-  const cacheKey = `remote_movies:v4:slug:${slug}`;
+  const cacheKey = `remote_movies:v5:slug:${slug}`;
   const cachedData = await getCachedData<MovieRow>(cacheKey);
 
   if (cachedData) return normalizeMovie(cachedData);
@@ -349,6 +353,8 @@ export async function getMovieBySlug(slug: string): Promise<Movie | null> {
   const { data, error } = await supabase
     .from('movies')
     .select('*')
+    .not('poster_path', 'is', null)
+    .not('poster_path', 'eq', '')
     .eq('slug', slug)
     .maybeSingle();
 
@@ -370,6 +376,8 @@ export async function getMovieBySlug(slug: string): Promise<Movie | null> {
     const { data: prefixData, error: prefixError } = await supabase
       .from('movies')
       .select('*')
+      .not('poster_path', 'is', null)
+      .not('poster_path', 'eq', '')
       .ilike('slug', `${slug}-%`)
       .order('popularity', { ascending: false })
       .limit(1)
@@ -395,12 +403,14 @@ export async function getMovieBySlug(slug: string): Promise<Movie | null> {
 
 export async function getMovieById(id: number | string): Promise<Movie | null> {
   const idNum = Number(id);
-  const cacheKey = `remote_movies:v4:id:${id}`;
+  const cacheKey = `remote_movies:v5:id:${id}`;
   const cachedData = await getCachedData<MovieRow>(cacheKey);
 
   if (cachedData) return normalizeMovie(cachedData);
 
-  const query = supabase.from('movies').select('*');
+  const query = supabase.from('movies').select('*')
+    .not('poster_path', 'is', null)
+    .not('poster_path', 'eq', '');
   
   if (!isNaN(idNum)) {
     query.or(`id.eq.${idNum},tmdb_id.eq.${idNum}`);
@@ -446,6 +456,8 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
   let { data, error, count } = await supabase
     .from('movies')
     .select('*', { count: 'exact' })
+    .not('poster_path', 'is', null)
+    .not('poster_path', 'eq', '')
     .textSearch('fts', searchTerm, { type: 'websearch', config: 'english' })
     .order('popularity', { ascending: false })
     .range(from, to);
@@ -459,6 +471,8 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
     const fallback = await supabase
       .from('movies')
       .select('*', { count: 'exact' })
+      .not('poster_path', 'is', null)
+      .not('poster_path', 'eq', '')
       .or(`title.ilike.${ilikePattern},overview.ilike.${ilikePattern}`)
       .order('popularity', { ascending: false })
       .range(from, to);
@@ -514,7 +528,7 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
 }
 
 export async function getRecommendations(movie: Movie, limit = 6): Promise<Movie[]> {
-  const cacheKey = `remote_movies:v4:recommendations:${movie.id}`;
+  const cacheKey = `remote_movies:v5:recommendations:${movie.id}`;
   const cachedData = await getCachedData<MovieRow[]>(cacheKey);
 
   if (Array.isArray(cachedData)) return normalizeMovies(cachedData);
@@ -526,6 +540,8 @@ export async function getRecommendations(movie: Movie, limit = 6): Promise<Movie
   const { data, error } = await supabase
     .from('movies')
     .select('*')
+    .not('poster_path', 'is', null)
+    .not('poster_path', 'eq', '')
     .or([jsonContainsArrayValue('genres', genre), jsonContainsNamedObject('genres', genre)].join(','))
     .neq('tmdb_id', movie.id)
     .order('popularity', { ascending: false })
@@ -574,6 +590,8 @@ export async function getPopularMovies(limit = 10): Promise<Movie[]> {
   const { data, error } = await supabase
     .from('movies')
     .select('*')
+    .not('poster_path', 'is', null)
+    .not('poster_path', 'eq', '')
     .order('popularity', { ascending: false })
     .limit(limit);
 
@@ -593,7 +611,7 @@ export async function getPopularMovies(limit = 10): Promise<Movie[]> {
 }
 
 export async function getAllMovieSlugs(): Promise<string[]> {
-  const cacheKey = 'remote_movies:v1:all_slugs';
+  const cacheKey = 'remote_movies:v2:all_slugs';
   const cachedData = await getCachedData<string[]>(cacheKey);
 
   if (cachedData) return cachedData;
