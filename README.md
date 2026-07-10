@@ -14,6 +14,11 @@
 
 A free-tier-optimized movie suggestion platform built with Astro, React, and Supabase. This tool automatically ingests movie data from TMDB and provides a fast, searchable interface for discovering new movies.
 
+
+=======
+<img width="1832" height="955" alt="image" src="https://github.com/user-attachments/assets/8d480da1-8e39-4fd8-b8d9-80a3a0aa4fa2" />
+
+
 ## 📋 Table of Contents
 
 - [Tool Purpose](#-tool-purpose)
