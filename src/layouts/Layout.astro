@@ -88,6 +88,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 				observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 			}
 		</script>
+		<!-- Google tag (gtag.js) -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-C9BKQ4HD0C" is:inline></script>
+		<script is:inline>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+			gtag('config', 'G-C9BKQ4HD0C');
+		</script>
 	</head>
 	<body class="selection:bg-link/20 selection:text-link transition-colors duration-300">
 		<slot />
