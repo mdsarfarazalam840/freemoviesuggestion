@@ -66,11 +66,7 @@ jobs:
           if [ -n "$RELEASE_NOTES_INPUT" ]; then
             printf '%s\n' "$RELEASE_NOTES_INPUT" > release-notes.md
           else
-            cat > release-notes.md <<EOF
-Stable release ${RELEASE_TAG}.
-
-Built from commit ${GITHUB_SHA}.
-EOF
+            printf 'Stable release %s.\n\nBuilt from commit %s.\n' "$RELEASE_TAG" "$GITHUB_SHA" > release-notes.md
           fi
 
       - name: Create GitHub release
