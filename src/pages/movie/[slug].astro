@@ -115,7 +115,7 @@ const posterSrc = (movie?.thumbnail && movie.thumbnail.trim()) || PLACEHOLDER_SV
                 </div>
               </div>
               <div class="flex gap-3">
-                {movie.genres.map(genre => (
+                {movie.genres.map((genre: string) => (
                   <a 
                     href={`/genre/${genre.toLowerCase()}`} 
                     class="text-sm font-bold text-body px-4 py-2 bg-canvas-soft-2 rounded-pill border border-hairline hover:border-link hover:text-link transition-all"
@@ -150,7 +150,7 @@ const posterSrc = (movie?.thumbnail && movie.thumbnail.trim()) || PLACEHOLDER_SV
               Experience on Streaming
             </h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {movie.ottPlatforms.map(platform => (
+              {movie.ottPlatforms.map((platform: { url: string; logo: string; name: string }) => (
                 <div class="flex flex-col gap-3 group">
                   <a 
                     href={platform.url} 

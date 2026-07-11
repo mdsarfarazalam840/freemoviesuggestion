@@ -168,7 +168,8 @@ const categories = [
   });
 
   document.addEventListener('click', (e) => {
-    if (exploreDropdown && !exploreDropdown.contains(e.target) && exploreBtn?.getAttribute('aria-expanded') === 'true') {
+    const target = e.target instanceof Node ? e.target : null;
+    if (exploreDropdown && !exploreDropdown.contains(target) && exploreBtn?.getAttribute('aria-expanded') === 'true') {
       exploreBtn.setAttribute('aria-expanded', 'false');
       explorePanel?.classList.remove(...PANEL_OPEN);
       explorePanel?.classList.add(...PANEL_CLOSED);
@@ -186,18 +187,18 @@ const categories = [
   const OPEN_CLASSES = ['opacity-100', 'visible', 'pointer-events-auto'];
   const CLOSED_CLASSES = ['opacity-0', 'invisible', 'pointer-events-none'];
 
-  function getFocusableElements(container) {
+  function getFocusableElements(container: HTMLElement) {
     return container.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])');
   }
 
-  function trapFocus(container) {
+  function trapFocus(container: HTMLElement) {
     const focusableEls = getFocusableElements(container);
     if (focusableEls.length === 0) return;
-    const firstFocusable = focusableEls[0];
-    const lastFocusable = focusableEls[focusableEls.length - 1];
+    const firstFocusable = focusableEls[0] as HTMLElement;
+    const lastFocusable = focusableEls[focusableEls.length - 1] as HTMLElement;
     firstFocusable.focus();
 
-    function handleTab(e) {
+    function handleTab(e: KeyboardEvent) {
       if (e.key !== 'Tab') return;
       if (e.shiftKey) {
         if (document.activeElement === firstFocusable) {
@@ -216,7 +217,7 @@ const categories = [
     return () => container.removeEventListener('keydown', handleTab);
   }
 
-  let releaseTrap = null;
+  let releaseTrap: (() => void) | undefined;
 
   function openMenu() {
     mobileMenu?.classList.remove(...CLOSED_CLASSES);
@@ -231,7 +232,7 @@ const categories = [
     mobileMenu?.classList.add(...CLOSED_CLASSES);
     menuToggle?.setAttribute('aria-expanded', 'false');
     document.body.style.overflow = '';
-    if (releaseTrap) { releaseTrap(); releaseTrap = null; }
+    if (releaseTrap) { releaseTrap(); releaseTrap = undefined; }
     menuToggle?.focus();
   }
 

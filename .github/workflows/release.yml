@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version tag, for example v1.0.0"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark this release as a prerelease"
+        required: true
+        default: false
+        type: boolean
+      notes:
+        description: "Optional release notes"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and create release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout selected ref
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate Astro project
+        run: npx astro check
+
+      - name: Build site
+        run: npm run build
+
+      - name: Validate release tag
+        run: |
+          set -euo pipefail
+          VERSION="${{ inputs.version }}"
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Version must look like v1.0.0, v1.0.0-rc.1, or v1.0.0.1"
+            exit 1
+          fi
+          echo "RELEASE_TAG=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Package build output
+        run: |
+          cd dist
+          zip -r "../freemoviesuggestion-${RELEASE_TAG}.zip" .
+
+      - name: Prepare release notes
+        env:
+          RELEASE_NOTES_INPUT: ${{ inputs.notes }}
+        run: |
+          if [ -n "$RELEASE_NOTES_INPUT" ]; then
+            printf '%s\n' "$RELEASE_NOTES_INPUT" > release-notes.md
+          else
+            cat > release-notes.md <<EOF
+Stable release ${RELEASE_TAG}.
+
+Built from commit ${GITHUB_SHA}.
+EOF
+          fi
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PRERELEASE_FLAG=""
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
+          gh release create "$RELEASE_TAG" \
+            "freemoviesuggestion-${RELEASE_TAG}.zip" \
+            --target "$GITHUB_SHA" \
+            --title "$RELEASE_TAG" \
+            --notes-file release-notes.md \
+            $PRERELEASE_FLAG

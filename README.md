@@ -98,6 +98,17 @@ All commands are run from the root of the project:
 
 The project has two deployable components deployed on **Cloudflare Workers**: the **sync worker** (TMDB data ingestion) and the **website** (Astro SSR).
 
+### Manual Release
+
+Stable versions are created manually from GitHub Actions using the `Release` workflow.
+
+1. Open **GitHub → Actions → Release → Run workflow**.
+2. Select the branch or commit you want to mark as stable.
+3. Enter a version tag such as `v1.0.0`.
+4. Choose whether it is a prerelease, optionally add notes, then run it.
+
+The workflow installs dependencies, runs `npx astro check`, builds the site with `npm run build`, packages `dist/` as a zip file, and creates a GitHub Release for that tag.
+
 ### Sync Worker (TMDB Data Ingestion)
 
 A dedicated Cloudflare Worker (separate from the website) runs daily via Cron Triggers to fetch fresh movie data from TMDB and upsert it into Supabase.
@@ -155,7 +166,7 @@ npx wrangler deploy --config wrangler.toml --name movie-sync-worker
 
 ```text
 /
-├── .github/workflows/ # GitHub Actions (Sync)
+├── .github/workflows/ # GitHub Actions (Sync, Release)
 ├── public/            # Static assets
 ├── scripts/           # Maintenance & Sync scripts
 ├── src/
