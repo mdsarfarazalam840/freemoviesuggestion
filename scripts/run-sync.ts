@@ -15,6 +15,7 @@ async function runSync() {
     console.log('Sync complete.');
   } catch (error) {
     console.error('Sync failed:', error);
+    process.exit(1);
   }
 }
 
