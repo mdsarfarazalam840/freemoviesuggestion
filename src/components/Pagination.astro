@@ -44,21 +44,15 @@ function getPageNumbers(current: number, total: number): (number | string)[] {
 }
 
 const pageNumbers = getPageNumbers(currentPage, totalPages);
-const linkClass = 'inline-flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 text-sm font-medium rounded-pill transition-all';
-const activeClass = 'bg-ink text-canvas';
-const inactiveClass = 'text-link hover:bg-hairline';
-const disabledClass = 'pointer-events-none opacity-40';
-const ellipsisClass = 'inline-flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 text-sm text-mute select-none';
 const linkClass = 'inline-flex items-center justify-center w-9 h-9 text-sm font-medium rounded-pill transition-all';
 const activeClass = 'bg-ink text-canvas';
 const inactiveClass = 'text-link hover:bg-hairline';
 const disabledClass = 'pointer-events-none opacity-40';
 const ellipsisClass = 'inline-flex items-center justify-center w-9 h-9 text-sm text-mute select-none';
+---
 
 {
   totalPages > 1 && (
-
-    <nav class="mt-10 flex flex-wrap items-center justify-center gap-1 border-t border-hairline pt-6" aria-label="Pagination">
 
     <nav class="mt-10 flex items-center justify-center gap-1 border-t border-hairline pt-6" aria-label="Pagination">
 
