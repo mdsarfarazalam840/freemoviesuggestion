@@ -306,13 +306,22 @@ export async function syncMovies(targetCount = 1000) {
     }
 
     if (movieBatch.length > 0) {
-      const { error } = await supabase.from('movies').upsert(movieBatch, { onConflict: 'tmdb_id' });
+      const seen = new Set<number>();
+      const deduped = movieBatch.filter(m => {
+        if (seen.has(m.tmdb_id)) return false;
+        seen.add(m.tmdb_id);
+        return true;
+      });
+      if (deduped.length < movieBatch.length) {
+        console.log(`Deduplicated ${movieBatch.length - deduped.length} movies in batch`);
+      }
+      const { error } = await supabase.from('movies').upsert(deduped, { onConflict: 'tmdb_id' });
       if (error) {
         console.error('Supabase upsert error:', error);
         stats.failed += movieBatch.length;
       } else {
-        stats.upserted += movieBatch.length; 
-        totalSynced += movieBatch.length;
+        stats.upserted += deduped.length; 
+        totalSynced += deduped.length;
       }
     }
 
@@ -397,8 +406,17 @@ export async function syncTrendingMovies() {
   movieBatch.push(...processResults(mollywoodData.results, 'Mollywood'));
   movieBatch.push(...processResults(sandalwoodData.results, 'Sandalwood'));
 
-  const { error } = await supabase.from('movies').upsert(movieBatch, { onConflict: 'tmdb_id' });
+  const seen = new Set<number>();
+  const deduped = movieBatch.filter(m => {
+    if (seen.has(m.tmdb_id)) return false;
+    seen.add(m.tmdb_id);
+    return true;
+  });
+  if (deduped.length < movieBatch.length) {
+    console.log(`Deduplicated ${movieBatch.length - deduped.length} trending movies`);
+  }
+  const { error } = await supabase.from('movies').upsert(deduped, { onConflict: 'tmdb_id' });
   if (error) throw error;
   
-  console.log(`Successfully synced ${movieBatch.length} trending movies.`);
+  console.log(`Successfully synced ${deduped.length} trending movies.`);
 }
