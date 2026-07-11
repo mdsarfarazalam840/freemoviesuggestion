@@ -52,13 +52,13 @@ const categories = [
         ))}
 
         <!-- Categories Dropdown -->
-        <div class="relative group/dropdown">
-          <button class="nav-link flex items-center gap-1 group-hover/dropdown:text-ink">
+        <div class="relative group/dropdown" id="explore-dropdown">
+          <button class="nav-link flex items-center gap-1 group-hover/dropdown:text-ink" id="explore-btn" aria-haspopup="true" aria-expanded="false">
             Explore
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300 group-hover/dropdown:rotate-180"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300 group-hover/dropdown:rotate-180" id="explore-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
 
-          <div class="absolute left-0 top-full pt-2 opacity-0 translate-y-2 pointer-events-none group-hover/dropdown:opacity-100 group-hover/dropdown:translate-y-0 group-hover/dropdown:pointer-events-auto transition-all duration-300 z-50">
+          <div class="absolute left-0 top-full pt-2 opacity-0 translate-y-2 pointer-events-none group-hover/dropdown:opacity-100 group-hover/dropdown:translate-y-0 group-hover/dropdown:pointer-events-auto transition-all duration-300 z-50" id="explore-panel">
             <div class="w-80 overflow-hidden rounded-premium border border-hairline bg-canvas p-2 shadow-premium">
               {categories.map(cat => (
                 <a href={cat.href} class="flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-canvas-soft group/item">
@@ -140,6 +140,43 @@ const categories = [
 </div>
 
 <script>
+  // Explore dropdown toggle for touch devices
+  const exploreDropdown = document.getElementById('explore-dropdown');
+  const exploreBtn = document.getElementById('explore-btn');
+  const explorePanel = document.getElementById('explore-panel');
+  const exploreChevron = document.getElementById('explore-chevron');
+
+  const PANEL_OPEN = ['opacity-100', 'translate-y-0', 'pointer-events-auto'];
+  const PANEL_CLOSED = ['opacity-0', 'translate-y-2', 'pointer-events-none'];
+
+  exploreBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = exploreBtn.getAttribute('aria-expanded') === 'true';
+    exploreBtn.setAttribute('aria-expanded', String(!isOpen));
+
+    if (isOpen) {
+      explorePanel?.classList.remove(...PANEL_OPEN);
+      explorePanel?.classList.add(...PANEL_CLOSED);
+      exploreChevron?.classList.remove('rotate-180');
+      exploreBtn?.classList.remove('text-ink');
+    } else {
+      explorePanel?.classList.remove(...PANEL_CLOSED);
+      explorePanel?.classList.add(...PANEL_OPEN);
+      exploreChevron?.classList.add('rotate-180');
+      exploreBtn?.classList.add('text-ink');
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (exploreDropdown && !exploreDropdown.contains(e.target) && exploreBtn?.getAttribute('aria-expanded') === 'true') {
+      exploreBtn.setAttribute('aria-expanded', 'false');
+      explorePanel?.classList.remove(...PANEL_OPEN);
+      explorePanel?.classList.add(...PANEL_CLOSED);
+      exploreChevron?.classList.remove('rotate-180');
+      exploreBtn?.classList.remove('text-ink');
+    }
+  });
+
   const menuToggle = document.getElementById('menu-toggle');
   const closeMenu = document.getElementById('close-menu');
   const mobileMenu = document.getElementById('mobile-menu');
@@ -202,8 +239,17 @@ const categories = [
   closeMenu?.addEventListener('click', closeMobileMenu);
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && menuToggle?.getAttribute('aria-expanded') === 'true') {
-      closeMobileMenu();
+    if (e.key === 'Escape') {
+      if (menuToggle?.getAttribute('aria-expanded') === 'true') {
+        closeMobileMenu();
+      }
+      if (exploreBtn?.getAttribute('aria-expanded') === 'true') {
+        exploreBtn.setAttribute('aria-expanded', 'false');
+        explorePanel?.classList.remove(...PANEL_OPEN);
+        explorePanel?.classList.add(...PANEL_CLOSED);
+        exploreChevron?.classList.remove('rotate-180');
+        exploreBtn?.classList.remove('text-ink');
+      }
     }
   });
 
