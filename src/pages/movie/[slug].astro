@@ -2,12 +2,14 @@
 import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
 import Footer from '../../components/Footer.astro';
-import { getMovieBySlug } from '../../services/movieService';
+import SuggestedMoviesMarquee from '../../components/SuggestedMoviesMarquee.tsx';
+import { getMovieBySlug, getRegionFilteredRecommendations } from '../../services/movieService';
 
 export const prerender = false;
 
 const { slug } = Astro.params;
 let movie: any = null;
+let recommendations: any[] = [];
 try {
   movie = slug ? await getMovieBySlug(slug) : null;
 } catch (error) {
@@ -22,6 +24,14 @@ if (!movie) {
 // Redirect if the slug doesn't match the movie's official slug (e.g. missing ID suffix)
 if (movie && movie.slug !== slug) {
   return Astro.redirect(`/movie/${movie.slug}`);
+}
+
+if (movie) {
+  try {
+    recommendations = await getRegionFilteredRecommendations(movie, 8);
+  } catch (error) {
+    console.error('[movie/[slug].astro] Recommendations error:', error);
+  }
 }
 
 // Fallback poster (matches MovieCard.astro) for movies with an empty/broken thumbnail
@@ -215,6 +225,14 @@ const posterSrc = (movie?.thumbnail && movie.thumbnail.trim()) || PLACEHOLDER_SV
             </div>
           </aside>
         </div>
+
+        {recommendations.length > 0 && (
+          <SuggestedMoviesMarquee
+            client:load
+            movies={recommendations}
+            region={movie.region}
+          />
+        )}
       </div>
     </section>
     </>

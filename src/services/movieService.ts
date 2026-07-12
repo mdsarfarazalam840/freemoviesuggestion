@@ -528,34 +528,118 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
 }
 
 export async function getRecommendations(movie: Movie, limit = 6): Promise<Movie[]> {
-  const cacheKey = `remote_movies:v5:recommendations:${movie.id}`;
+  const cacheKey = `remote_movies:v6:recommendations:${movie.id}`;
   const cachedData = await getCachedData<MovieRow[]>(cacheKey);
 
   if (Array.isArray(cachedData)) return normalizeMovies(cachedData);
 
-  // Simple recommendation: same genres, different movie, ordered by popularity
-  const genre = movie.genres[0];
-  if (!genre) return [];
+  if (!movie.genres.length) return [];
 
-  const { data, error } = await supabase
-    .from('movies')
-    .select('*')
-    .not('poster_path', 'is', null)
-    .not('poster_path', 'eq', '')
-    .or([jsonContainsArrayValue('genres', genre), jsonContainsNamedObject('genres', genre)].join(','))
-    .neq('tmdb_id', movie.id)
-    .order('popularity', { ascending: false })
-    .limit(limit);
+  const seenIds = new Set<string>([String(movie.id), String((movie as MovieRow).tmdb_id || '')].filter(Boolean));
+  const results: MovieRow[] = [];
 
-  if (error) {
-    console.warn(`Supabase recommendations failed for ${movie.id}:`, error);
-    const localRecs = localMovies
-      .filter((m) => m.id !== movie.id && m.genres.some((g) => movie.genres.includes(g)))
-      .slice(0, limit);
-    return localRecs;
+  for (const genre of movie.genres) {
+    if (results.length >= limit) break;
+
+    const { data, error } = await supabase
+      .from('movies')
+      .select('*')
+      .not('poster_path', 'is', null)
+      .not('poster_path', 'eq', '')
+      .or([jsonContainsArrayValue('genres', genre), jsonContainsNamedObject('genres', genre)].join(','))
+      .order('popularity', { ascending: false })
+      .limit(limit * 2);
+
+    if (error) {
+      console.warn(`Supabase recommendations failed for ${movie.id} and genre ${genre}:`, error);
+      continue;
+    }
+
+    for (const row of data || []) {
+      if (results.length >= limit) break;
+
+      const rowIds = [row.id, row.tmdb_id, row.slug].filter(Boolean).map(String);
+      if (rowIds.some((rowId) => seenIds.has(rowId))) continue;
+
+      rowIds.forEach((rowId) => seenIds.add(rowId));
+      results.push(row);
+    }
   }
 
-  const result = normalizeMovies(data);
+  if (results.length === 0) {
+    return localMovies
+      .filter((m) => m.id !== movie.id && m.genres.some((g) => movie.genres.includes(g)))
+      .slice(0, limit);
+  }
+
+  const result = normalizeMovies(results);
+  await setCachedData(cacheKey, result, 86400);
+
+  return result;
+}
+
+export async function getRegionFilteredRecommendations(
+  movie: Movie,
+  limit = 8,
+): Promise<Movie[]> {
+  const cacheKey = `remote_movies:v6:region_recs:${movie.id}`;
+  const cachedData = await getCachedData<MovieRow[]>(cacheKey);
+
+  if (Array.isArray(cachedData)) return normalizeMovies(cachedData);
+
+  if (!movie.genres.length && !movie.region) return [];
+
+  const seenIds = new Set<string>(
+    [String(movie.id), String((movie as MovieRow).tmdb_id || '')].filter(Boolean),
+  );
+  const results: MovieRow[] = [];
+
+  for (const genre of movie.genres) {
+    if (results.length >= limit) break;
+
+    const { data, error } = await supabase
+      .from('movies')
+      .select('*')
+      .eq('region', movie.region)
+      .not('poster_path', 'is', null)
+      .not('poster_path', 'eq', '')
+      .or(
+        [jsonContainsArrayValue('genres', genre), jsonContainsNamedObject('genres', genre)].join(','),
+      )
+      .order('popularity', { ascending: false })
+      .limit(limit * 2);
+
+    if (error) {
+      console.warn(
+        `[getRegionFilteredRecommendations] Supabase failed for ${movie.id}, genre ${genre}:`,
+        error,
+      );
+      continue;
+    }
+
+    for (const row of data || []) {
+      if (results.length >= limit) break;
+
+      const rowIds = [row.id, row.tmdb_id, row.slug].filter(Boolean).map(String);
+      if (rowIds.some((rowId) => seenIds.has(rowId))) continue;
+
+      rowIds.forEach((rowId) => seenIds.add(rowId));
+      results.push(row);
+    }
+  }
+
+  if (results.length === 0) {
+    return localMovies
+      .filter(
+        (m) =>
+          m.id !== movie.id &&
+          m.region === movie.region &&
+          m.genres.some((g) => movie.genres.includes(g)),
+      )
+      .slice(0, limit);
+  }
+
+  const result = normalizeMovies(results);
   await setCachedData(cacheKey, result, 86400);
 
   return result;
