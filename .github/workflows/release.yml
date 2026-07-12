@@ -19,6 +19,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   release:
@@ -28,6 +29,8 @@ jobs:
     steps:
       - name: Checkout selected ref
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -62,11 +65,95 @@ jobs:
       - name: Prepare release notes
         env:
           RELEASE_NOTES_INPUT: ${{ inputs.notes }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [ -n "$RELEASE_NOTES_INPUT" ]; then
-            printf '%s\n' "$RELEASE_NOTES_INPUT" > release-notes.md
+          set -euo pipefail
+
+          PREVIOUS_TAG="$(git tag --merged "$GITHUB_SHA" --sort=-v:refname | grep -v "^${RELEASE_TAG}$" | head -n 1 || true)"
+          if [ -n "$PREVIOUS_TAG" ]; then
+            RANGE="${PREVIOUS_TAG}..${GITHUB_SHA}"
+            COMPARE_LABEL="${PREVIOUS_TAG}...${RELEASE_TAG}"
           else
-            printf 'Stable release %s.\n\nBuilt from commit %s.\n' "$RELEASE_TAG" "$GITHUB_SHA" > release-notes.md
+            RANGE="$GITHUB_SHA"
+            COMPARE_LABEL="initial release"
+          fi
+
+          {
+            printf '# %s\n\n' "$RELEASE_TAG"
+            if [ -n "$RELEASE_NOTES_INPUT" ]; then
+              printf '%s\n\n' "$RELEASE_NOTES_INPUT"
+            fi
+            printf 'Built from commit `%s`.\n\n' "$GITHUB_SHA"
+            if [ -n "$PREVIOUS_TAG" ]; then
+              printf 'Changes since `%s`.\n\n' "$PREVIOUS_TAG"
+            else
+              printf 'No previous tag was found, so this release includes the selected commit history.\n\n'
+            fi
+          } > release-notes.md
+
+          mapfile -t COMMITS < <(git log --reverse --format='%H%x09%h%x09%s%x09%an <%ae>' "$RANGE")
+
+          if [ "${#COMMITS[@]}" -eq 0 ]; then
+            printf 'No commits found for %s.\n' "$COMPARE_LABEL" >> release-notes.md
+            exit 0
+          fi
+
+          TMP_DIR="$(mktemp -d)"
+          PRS_TSV="$TMP_DIR/prs.tsv"
+          DIRECT_TSV="$TMP_DIR/direct.tsv"
+          : > "$PRS_TSV"
+          : > "$DIRECT_TSV"
+
+          for entry in "${COMMITS[@]}"; do
+            IFS=$'\t' read -r sha short_sha subject author <<< "$entry"
+            prs_json="$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/${GITHUB_REPOSITORY}/commits/${sha}/pulls" || printf '[]')"
+
+            pr_count="$(jq 'length' <<< "$prs_json")"
+            if [ "$pr_count" -gt 0 ]; then
+              jq -r --arg sha "$sha" --arg short_sha "$short_sha" --arg subject "$subject" --arg author "$author" '
+                .[] | [
+                  (.number | tostring),
+                  .title,
+                  .html_url,
+                  (.user.login // "unknown"),
+                  $sha,
+                  $short_sha,
+                  $subject,
+                  $author
+                ] | @tsv
+              ' <<< "$prs_json" >> "$PRS_TSV"
+            else
+              printf '%s\t%s\t%s\t%s\n' "$sha" "$short_sha" "$subject" "$author" >> "$DIRECT_TSV"
+            fi
+          done
+
+          if [ -s "$PRS_TSV" ]; then
+            printf '## Pull Requests\n\n' >> release-notes.md
+
+            cut -f1-4 "$PRS_TSV" | sort -n -u | while IFS=$'\t' read -r pr_number pr_title pr_url pr_author; do
+              printf -- '- [#%s](%s) %s by @%s\n' "$pr_number" "$pr_url" "$pr_title" "$pr_author" >> release-notes.md
+
+              awk -F '\t' -v pr="$pr_number" '$1 == pr { print $5 "\t" $6 "\t" $7 "\t" $8 }' "$PRS_TSV" \
+                | sort -u \
+                | while IFS=$'\t' read -r sha short_sha subject author; do
+                    printf '  - `%s` %s (%s)\n' "$short_sha" "$subject" "$author" >> release-notes.md
+                  done
+
+              printf '\n' >> release-notes.md
+            done
+          else
+            printf '## Pull Requests\n\nNo pull requests were found for this release range.\n\n' >> release-notes.md
+          fi
+
+          if [ -s "$DIRECT_TSV" ]; then
+            printf '## Direct Commits\n\n' >> release-notes.md
+            while IFS=$'\t' read -r sha short_sha subject author; do
+              printf -- '- `%s` %s (%s)\n' "$short_sha" "$subject" "$author" >> release-notes.md
+            done < "$DIRECT_TSV"
+            printf '\n' >> release-notes.md
           fi
 
       - name: Create GitHub release
