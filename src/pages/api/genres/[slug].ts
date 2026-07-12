@@ -3,14 +3,17 @@ import { getMoviesPage } from '../../../services/movieService';
 import { getCachedData, setCachedData } from '../../../services/cache';
 
 const CACHE_TTL = 3600; // 1 hour
+const MAX_LIMIT = 30;
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ params, url }) => {
   try {
-    const { slug } = params;
-    const page = parseInt(url.searchParams.get('page') || '1', 10);
-    const limit = parseInt(url.searchParams.get('limit') || '24', 10);
+    const slug = params.slug?.trim().toLowerCase();
+    const pageParam = Number(url.searchParams.get('page') || '1');
+    const limitParam = Number(url.searchParams.get('limit') || '24');
+    const page = Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 1;
+    const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(Math.floor(limitParam), MAX_LIMIT) : 24;
 
     if (!slug) return new Response('Missing genre slug', { status: 400 });
 

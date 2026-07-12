@@ -3,23 +3,30 @@ import { searchMovies } from '../../services/movieService';
 import { getCachedData, setCachedData } from '../../services/cache';
 
 const CACHE_TTL = 900; // 15 minutes
+const MAX_QUERY_LENGTH = 80;
+const MAX_LIMIT = 12;
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ url }) => {
   try {
-    const q = url.searchParams.get('q');
-    const page = parseInt(url.searchParams.get('page') || '1', 10);
-    const limit = parseInt(url.searchParams.get('limit') || '20', 10);
+    const q = (url.searchParams.get('q') || '').trim().slice(0, MAX_QUERY_LENGTH);
+    const pageParam = Number(url.searchParams.get('page') || '1');
+    const limitParam = Number(url.searchParams.get('limit') || '6');
+    const page = Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 1;
+    const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(Math.floor(limitParam), MAX_LIMIT) : 6;
 
-    if (!q) {
+    if (q.length < 2) {
       return new Response(JSON.stringify({ movies: [], count: 0 }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=300, s-maxage=1800',
+        }
       });
     }
 
-    const cacheKey = `search:q${q}:p${page}:l${limit}`;
+    const cacheKey = `search:v2:q${q.toLowerCase()}:p${page}:l${limit}`;
     const cached = await getCachedData<any>(cacheKey);
 
     if (cached) {

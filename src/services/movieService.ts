@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { hasSupabaseConfig } from '../lib/env';
 import { getCachedData, setCachedData } from './cache';
 import { movies as localMovies, OTT_PLATFORMS } from '../data/movies';
 import type { Movie, OTTPlatform } from '../data/movies';
@@ -179,8 +180,9 @@ function jsonContainsNamedObject(column: string, value: string): string {
 function movieCacheKey(prefix: string, options: MovieQueryOptions = {}) {
   const page = normalizePage(options.page);
   const limit = normalizeLimit(options.limit);
+  const safePrefix = prefix.trim().toLowerCase().replace(/\s+/g, '-').slice(0, 120);
   const parts = [
-    prefix,
+    safePrefix,
     `page:${page}`,
     `limit:${limit}`,
     options.region ? `region:${options.region.toLowerCase()}` : null,
@@ -261,13 +263,17 @@ function applyMovieFilters(query: any, options: MovieQueryOptions = {}) {
 }
 
 async function fetchMoviePage(options: MovieQueryOptions = {}): Promise<FetchMoviePageResult> {
+  if (!hasSupabaseConfig()) {
+    return getLocalMoviePage(options);
+  }
+
   const page = normalizePage(options.page);
   const limit = normalizeLimit(options.limit);
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
-  const pageQuery = applyMovieFilters(supabase.from('movies').select('*'), options);
-  const { data, error } = await pageQuery
+  const pageQuery = applyMovieFilters(supabase.from('movies').select('*', { count: 'exact' }), options);
+  const { data, error, count } = await pageQuery
     .not('poster_path', 'is', null)
     .not('poster_path', 'eq', '')
     .order('rank', { ascending: true, nullsFirst: false })
@@ -277,18 +283,6 @@ async function fetchMoviePage(options: MovieQueryOptions = {}): Promise<FetchMov
   if (error) {
     console.warn('Supabase movie page fetch failed:', error.message, error.code, error.details);
     return getLocalMoviePage(options);
-  }
-
-  const countQuery = applyMovieFilters(
-    supabase.from('movies').select('id', { count: 'exact', head: true }),
-    options
-  )
-    .not('poster_path', 'is', null)
-    .not('poster_path', 'eq', '');
-  const { count, error: countError } = await countQuery;
-
-  if (countError) {
-    console.warn('Supabase movie count failed:', countError.message, countError.code);
   }
 
   const safeCount = count ?? data?.length ?? 0;
@@ -349,6 +343,10 @@ export async function getMovieBySlug(slug: string): Promise<Movie | null> {
 
   if (cachedData) return normalizeMovie(cachedData);
 
+  if (!hasSupabaseConfig()) {
+    return localMovies.find((m) => m.slug === slug) || null;
+  }
+
   // 1. Try exact match
   const { data, error } = await supabase
     .from('movies')
@@ -408,6 +406,10 @@ export async function getMovieById(id: number | string): Promise<Movie | null> {
 
   if (cachedData) return normalizeMovie(cachedData);
 
+  if (!hasSupabaseConfig()) {
+    return localMovies.find((m) => m.id === String(id)) || null;
+  }
+
   const query = supabase.from('movies').select('*')
     .not('poster_path', 'is', null)
     .not('poster_path', 'eq', '');
@@ -435,39 +437,56 @@ export async function getMovieById(id: number | string): Promise<Movie | null> {
 }
 
 export async function searchMovies(searchTerm: string, options: MovieQueryOptions = {}): Promise<MoviePage> {
+  const normalizedSearchTerm = searchTerm.trim().slice(0, 80);
   const page = normalizePage(options.page);
   const limit = normalizeLimit(options.limit);
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
-  const cacheKey = movieCacheKey(`search:${searchTerm}`, options);
+  const cacheKey = movieCacheKey(`search:${normalizedSearchTerm}`, options);
   const cachedData = await getCachedData<MoviePage>(cacheKey);
 
   if (cachedData && Array.isArray(cachedData.movies)) {
-    console.log(`[search] ✓ Cache HIT for "${searchTerm}" (${cachedData.movies.length} results from Upstash)`);
+    console.log(`[search] ✓ Cache HIT for "${normalizedSearchTerm}" (${cachedData.movies.length} results from Upstash)`);
     return {
       ...cachedData,
       movies: normalizeMovies(cachedData.movies),
     };
   }
 
-  console.log(`[search] Cache MISS for "${searchTerm}" — querying Supabase...`);
+  if (!hasSupabaseConfig()) {
+    const localResults = localMovies.filter(
+      (m) =>
+        m.title.toLowerCase().includes(normalizedSearchTerm.toLowerCase()) ||
+        m.description.toLowerCase().includes(normalizedSearchTerm.toLowerCase())
+    );
+    const safeCount = localResults.length;
+    return {
+      movies: localResults.slice(from, from + limit),
+      count: safeCount,
+      page,
+      limit,
+      totalPages: Math.ceil(safeCount / limit),
+    };
+  }
+
+  console.log(`[search] Cache MISS for "${normalizedSearchTerm}" — querying Supabase...`);
 
   let { data, error, count } = await supabase
     .from('movies')
     .select('*', { count: 'exact' })
     .not('poster_path', 'is', null)
     .not('poster_path', 'eq', '')
-    .textSearch('fts', searchTerm, { type: 'websearch', config: 'english' })
+    .textSearch('fts', normalizedSearchTerm, { type: 'websearch', config: 'english' })
     .order('popularity', { ascending: false })
     .range(from, to);
 
   if (error) {
-    console.warn(`[search] textSearch failed for "${searchTerm}":`, error.message, error.code);
+    console.warn(`[search] textSearch failed for "${normalizedSearchTerm}":`, error.message, error.code);
   }
 
   if (error || !data || data.length === 0) {
-    const ilikePattern = `%${searchTerm}%`;
+    const ilikePattern = `%${normalizedSearchTerm}%`;
     const fallback = await supabase
       .from('movies')
       .select('*', { count: 'exact' })
@@ -481,16 +500,16 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
       data = fallback.data;
       count = fallback.count;
     } else if (error) {
-      console.warn(`[search] ilike fallback also failed for "${searchTerm}":`, fallback.error?.message);
+      console.warn(`[search] ilike fallback also failed for "${normalizedSearchTerm}":`, fallback.error?.message);
     }
   }
 
   if (!data || data.length === 0) {
-    console.log(`[search] No Supabase results for "${searchTerm}", using local fallback`);
+    console.log(`[search] No Supabase results for "${normalizedSearchTerm}", using local fallback`);
     const localResults = localMovies.filter(
       (m) =>
-        m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.description.toLowerCase().includes(searchTerm.toLowerCase())
+        m.title.toLowerCase().includes(normalizedSearchTerm.toLowerCase()) ||
+        m.description.toLowerCase().includes(normalizedSearchTerm.toLowerCase())
     );
     const safeCount = localResults.length;
     const fallbackResult: MoviePage = {
@@ -503,7 +522,7 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
 
     // Cache even empty/local results so we don't hit Supabase again for the same query
     await setCachedData(cacheKey, fallbackResult, 900); // 15 min TTL for fallback
-    console.log(`[search] Cached ${safeCount} local results for "${searchTerm}" in Upstash`);
+    console.log(`[search] Cached ${safeCount} local results for "${normalizedSearchTerm}" in Upstash`);
     return fallbackResult;
   }
 
@@ -518,44 +537,145 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
 
   const hasEmptyThumbnails = result.movies.some((m) => !m.thumbnail);
   if (hasEmptyThumbnails) {
-    console.warn(`[search] ${result.movies.filter((m) => !m.thumbnail).length}/${result.movies.length} movies have empty thumbnails for "${searchTerm}" — skipping cache`);
+    console.warn(`[search] ${result.movies.filter((m) => !m.thumbnail).length}/${result.movies.length} movies have empty thumbnails for "${normalizedSearchTerm}" — skipping cache`);
   } else {
     await setCachedData(cacheKey, result, 3600);
-    console.log(`[search] Cached ${result.movies.length} Supabase results for "${searchTerm}" in Upstash`);
+    console.log(`[search] Cached ${result.movies.length} Supabase results for "${normalizedSearchTerm}" in Upstash`);
   }
 
   return result;
 }
 
 export async function getRecommendations(movie: Movie, limit = 6): Promise<Movie[]> {
-  const cacheKey = `remote_movies:v5:recommendations:${movie.id}`;
+  const cacheKey = `remote_movies:v6:recommendations:${movie.id}`;
   const cachedData = await getCachedData<MovieRow[]>(cacheKey);
 
   if (Array.isArray(cachedData)) return normalizeMovies(cachedData);
 
-  // Simple recommendation: same genres, different movie, ordered by popularity
-  const genre = movie.genres[0];
-  if (!genre) return [];
+  if (!movie.genres.length) return [];
 
-  const { data, error } = await supabase
-    .from('movies')
-    .select('*')
-    .not('poster_path', 'is', null)
-    .not('poster_path', 'eq', '')
-    .or([jsonContainsArrayValue('genres', genre), jsonContainsNamedObject('genres', genre)].join(','))
-    .neq('tmdb_id', movie.id)
-    .order('popularity', { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    console.warn(`Supabase recommendations failed for ${movie.id}:`, error);
-    const localRecs = localMovies
+  if (!hasSupabaseConfig()) {
+    return localMovies
       .filter((m) => m.id !== movie.id && m.genres.some((g) => movie.genres.includes(g)))
       .slice(0, limit);
-    return localRecs;
   }
 
-  const result = normalizeMovies(data);
+  const seenIds = new Set<string>([String(movie.id), String((movie as MovieRow).tmdb_id || '')].filter(Boolean));
+  const results: MovieRow[] = [];
+
+  for (const genre of movie.genres) {
+    if (results.length >= limit) break;
+
+    const { data, error } = await supabase
+      .from('movies')
+      .select('*')
+      .not('poster_path', 'is', null)
+      .not('poster_path', 'eq', '')
+      .or([jsonContainsArrayValue('genres', genre), jsonContainsNamedObject('genres', genre)].join(','))
+      .order('popularity', { ascending: false })
+      .limit(limit * 2);
+
+    if (error) {
+      console.warn(`Supabase recommendations failed for ${movie.id} and genre ${genre}:`, error);
+      continue;
+    }
+
+    for (const row of data || []) {
+      if (results.length >= limit) break;
+
+      const rowIds = [row.id, row.tmdb_id, row.slug].filter(Boolean).map(String);
+      if (rowIds.some((rowId) => seenIds.has(rowId))) continue;
+
+      rowIds.forEach((rowId) => seenIds.add(rowId));
+      results.push(row);
+    }
+  }
+
+  if (results.length === 0) {
+    return localMovies
+      .filter((m) => m.id !== movie.id && m.genres.some((g) => movie.genres.includes(g)))
+      .slice(0, limit);
+  }
+
+  const result = normalizeMovies(results);
+  await setCachedData(cacheKey, result, 86400);
+
+  return result;
+}
+
+export async function getRegionFilteredRecommendations(
+  movie: Movie,
+  limit = 8,
+): Promise<Movie[]> {
+  const cacheKey = `remote_movies:v6:region_recs:${movie.id}`;
+  const cachedData = await getCachedData<MovieRow[]>(cacheKey);
+
+  if (Array.isArray(cachedData)) return normalizeMovies(cachedData);
+
+  if (!movie.genres.length && !movie.region) return [];
+
+  if (!hasSupabaseConfig()) {
+    return localMovies
+      .filter(
+        (m) =>
+          m.id !== movie.id &&
+          m.region === movie.region &&
+          m.genres.some((g) => movie.genres.includes(g)),
+      )
+      .slice(0, limit);
+  }
+
+  const seenIds = new Set<string>(
+    [String(movie.id), String((movie as MovieRow).tmdb_id || '')].filter(Boolean),
+  );
+  const results: MovieRow[] = [];
+
+  for (const genre of movie.genres) {
+    if (results.length >= limit) break;
+
+    const { data, error } = await supabase
+      .from('movies')
+      .select('*')
+      .eq('region', movie.region)
+      .not('poster_path', 'is', null)
+      .not('poster_path', 'eq', '')
+      .or(
+        [jsonContainsArrayValue('genres', genre), jsonContainsNamedObject('genres', genre)].join(','),
+      )
+      .order('popularity', { ascending: false })
+      .limit(limit * 2);
+
+    if (error) {
+      console.warn(
+        `[getRegionFilteredRecommendations] Supabase failed for ${movie.id}, genre ${genre}:`,
+        error,
+      );
+      continue;
+    }
+
+    for (const row of data || []) {
+      if (results.length >= limit) break;
+
+      const rowIds = [row.id, row.tmdb_id, row.slug].filter(Boolean).map(String);
+      if (rowIds.some((rowId) => seenIds.has(rowId))) continue;
+
+      rowIds.forEach((rowId) => seenIds.add(rowId));
+      results.push(row);
+    }
+  }
+
+  if (results.length === 0) {
+    return localMovies
+      .filter(
+        (m) =>
+          m.id !== movie.id &&
+          m.region === movie.region &&
+          m.genres.some((g) => movie.genres.includes(g)),
+      )
+      .slice(0, limit);
+  }
+
+  const result = normalizeMovies(results);
   await setCachedData(cacheKey, result, 86400);
 
   return result;
@@ -584,6 +704,13 @@ export async function getPopularMovies(limit = 10): Promise<Movie[]> {
   const cachedData = await getCachedData<MovieRow[]>(cacheKey);
   if (Array.isArray(cachedData)) {
     return normalizeMovies(cachedData);
+  }
+
+  if (!hasSupabaseConfig()) {
+    return localMovies
+      .filter((m) => m.isTop10)
+      .sort((a, b) => (a.rank || 99) - (b.rank || 99))
+      .slice(0, limit);
   }
 
   // Fetch movies ordered by popularity
@@ -615,6 +742,8 @@ export async function getAllMovieSlugs(): Promise<string[]> {
   const cachedData = await getCachedData<string[]>(cacheKey);
 
   if (cachedData) return cachedData;
+
+  if (!hasSupabaseConfig()) return localMovies.map((row) => row.slug);
 
   const { data, error } = await supabase
     .from('movies')

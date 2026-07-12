@@ -1,6 +1,7 @@
 import { getTmdbAccessToken } from '../lib/env';
 
 const BASE_URL = 'https://api.themoviedb.org/3';
+const FETCH_TIMEOUT_MS = 10000;
 
 // Proactive rate limiter: max 30 req/s (TMDB limit is ~40 req/s)
 const requestTimestamps: number[] = [];
@@ -23,12 +24,16 @@ function getApiKey(): string {
 
 async function fetchWithRetry(url: string, retries = 3, backoff = 1000): Promise<any> {
   await rateLimit();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
   try {
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${getApiKey()}`,
         accept: 'application/json',
       },
+      signal: controller.signal,
     });
 
     if (response.status === 429 || (response.status >= 500 && response.status <= 599)) {
@@ -48,6 +53,8 @@ async function fetchWithRetry(url: string, retries = 3, backoff = 1000): Promise
       return fetchWithRetry(url, retries - 1, backoff * 2);
     }
     throw error;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

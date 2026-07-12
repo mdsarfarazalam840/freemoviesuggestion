@@ -3,13 +3,15 @@ import { getMovieById, getRecommendations } from '../../services/movieService';
 import { getCachedData, setCachedData } from '../../services/cache';
 
 const CACHE_TTL = 86400; // 24 hours
+const MAX_LIMIT = 12;
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ url }) => {
   try {
-    const movieId = url.searchParams.get('movieId');
-    const limit = parseInt(url.searchParams.get('limit') || '6', 10);
+    const movieId = url.searchParams.get('movieId')?.trim();
+    const limitParam = Number(url.searchParams.get('limit') || '6');
+    const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(Math.floor(limitParam), MAX_LIMIT) : 6;
 
     if (!movieId) {
       return new Response(JSON.stringify({ error: 'Missing movieId' }), { status: 400 });

@@ -2,10 +2,25 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 import { getSupabaseUrl, getSupabaseServerKey } from './env';
 
+let client: SupabaseClient | null = null;
+let clientKey = '';
+
 function getSupabaseClient(): SupabaseClient {
   const supabaseUrl = getSupabaseUrl();
   const supabaseKey = getSupabaseServerKey();
-  return createClient(supabaseUrl, supabaseKey);
+  const nextClientKey = `${supabaseUrl}:${supabaseKey}`;
+
+  if (!client || clientKey !== nextClientKey) {
+    client = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
+    clientKey = nextClientKey;
+  }
+
+  return client;
 }
 
 export const supabase = new Proxy({} as SupabaseClient, {

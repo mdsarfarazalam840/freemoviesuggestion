@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
-import MovieCardReact from '../../components/MovieCard.tsx';
+import MovieCardAstro from '../../components/MovieCard.astro';
 import Pagination from '../../components/Pagination.astro';
 import Footer from '../../components/Footer.astro';
 import { getMoviesPage } from '../../services/movieService';
@@ -66,7 +66,7 @@ const pageHref = (nextPage: number) => nextPage > 1 ? `/region/${region}?page=${
       </div>
 
       <div class="grid grid-cols-2 gap-3 sm:gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {filteredMovies.map(movie => <MovieCardReact client:visible movie={movie} />)}
+        {filteredMovies.map(movie => <MovieCardAstro movie={movie} />)}
       </div>
 
       <Pagination

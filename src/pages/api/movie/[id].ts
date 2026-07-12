@@ -8,10 +8,10 @@ export const prerender = false;
 
 export const GET: APIRoute = async ({ params }) => {
   try {
-    const { id } = params;
+    const id = params.id?.trim();
     if (!id) return new Response('Missing id', { status: 400 });
 
-    const cacheKey = `movie:detail:${id}`;
+    const cacheKey = `movie:detail:v2:${id.toLowerCase()}`;
     const cached = await getCachedData<any>(cacheKey);
     
     if (cached) {
