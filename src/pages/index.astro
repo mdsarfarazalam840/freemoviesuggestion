@@ -3,7 +3,6 @@ import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
 import Hero from '../components/Hero.astro';
 import MovieCardAstro from '../components/MovieCard.astro';
-import MovieCardReact from '../components/MovieCard.tsx';
 import Footer from '../components/Footer.astro';
 import FAQ from '../components/FAQ.astro';
 import { getBollywoodMovies, getHollywoodMovies, getTollywoodMovies, getPopularMovies } from '../services/movieService';
@@ -74,7 +73,7 @@ try {
 							</a>
 						</div>
 						<div class="grid grid-cols-2 gap-4 sm:gap-8 md:grid-cols-4">
-							{bollywood.map(movie => <MovieCardReact client:visible movie={movie} />)}
+							{bollywood.map(movie => <MovieCardAstro movie={movie} />)}
 						</div>
 					</div>
 
@@ -93,7 +92,7 @@ try {
 							</a>
 						</div>
 						<div class="grid grid-cols-2 gap-4 sm:gap-8 md:grid-cols-4">
-							{hollywood.map(movie => <MovieCardReact client:visible movie={movie} />)}
+							{hollywood.map(movie => <MovieCardAstro movie={movie} />)}
 						</div>
 					</div>
 
@@ -112,7 +111,7 @@ try {
 							</a>
 						</div>
 						<div class="grid grid-cols-2 gap-4 sm:gap-8 md:grid-cols-4">
-							{tollywood.map(movie => <MovieCardReact client:visible movie={movie} />)}
+							{tollywood.map(movie => <MovieCardAstro movie={movie} />)}
 						</div>
 					</div>
 				</div>

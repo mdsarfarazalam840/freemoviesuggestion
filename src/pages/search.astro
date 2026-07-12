@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
-import MovieCardReact from '../components/MovieCard.tsx';
+import MovieCardAstro from '../components/MovieCard.astro';
 import Footer from '../components/Footer.astro';
 import { searchMovies } from '../services/movieService';
 
@@ -61,7 +61,7 @@ if (query) {
 
       {query && movies.length > 0 ? (
         <div class="grid grid-cols-2 gap-3 sm:gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {movies.map(movie => <MovieCardReact client:visible movie={movie} />)}
+          {movies.map(movie => <MovieCardAstro movie={movie} />)}
         </div>
       ) : query ? (
         <div class="py-24 text-center">

@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Navbar from '../../components/Navbar.astro';
-import MovieCardReact from '../../components/MovieCard.tsx';
+import MovieCardAstro from '../../components/MovieCard.astro';
 import Pagination from '../../components/Pagination.astro';
 import Footer from '../../components/Footer.astro';
 import { getMoviesPage } from '../../services/movieService';
@@ -135,7 +135,7 @@ const buildPageHref = (nextPage: number) => {
 
           {filteredMovies.length > 0 ? (
           <div id="movie-grid" class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
-            {filteredMovies.map(movie => <MovieCardReact client:visible movie={movie} />)}
+            {filteredMovies.map(movie => <MovieCardAstro movie={movie} />)}
           </div>
           ) : (
           <div id="no-results" class="py-24 text-center">

@@ -202,6 +202,7 @@ export default function SimpleMarquee({
 
   return (
     <motion.div
+      suppressHydrationWarning
       className={cn("flex", isHorizontal ? "flex-row" : "flex-col", className)}
       onHoverStart={() => (isHovered.current = true)}
       onHoverEnd={() => (isHovered.current = false)}
@@ -213,6 +214,7 @@ export default function SimpleMarquee({
       {Array.from({ length: repeat }, (_, i) => i).map((i) => (
         <motion.div
           key={i}
+          suppressHydrationWarning
           className={cn(
             "shrink-0",
             isHorizontal && "flex",

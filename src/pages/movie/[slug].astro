@@ -228,7 +228,7 @@ const posterSrc = (movie?.thumbnail && movie.thumbnail.trim()) || PLACEHOLDER_SV
 
         {recommendations.length > 0 && (
           <SuggestedMoviesMarquee
-            client:load
+            client:visible
             movies={recommendations}
             region={movie.region}
           />

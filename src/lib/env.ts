@@ -1,5 +1,3 @@
-type EnvMap = Record<string, string | undefined>;
-
 function getEnvValue(name: string): string | undefined {
   if (typeof import.meta !== 'undefined' && import.meta.env) {
     const metaValue = (import.meta.env as Record<string, string | undefined>)[name];
@@ -30,6 +28,10 @@ export function getSupabaseUrl(): string {
 
 export function getSupabaseServerKey(): string {
   return getServerEnv(['SUPABASE_SERVICE_ROLE_KEY', 'PUBLIC_SUPABASE_ANON_KEY', 'SUPABASE_KEY']);
+}
+
+export function hasSupabaseConfig(): boolean {
+  return Boolean(getSupabaseUrl() && getSupabaseServerKey());
 }
 
 export function getTmdbAccessToken(): string {

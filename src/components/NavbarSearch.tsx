@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface Movie {
   id: string;
@@ -18,15 +17,18 @@ const NavbarSearch: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (query.trim()) {
-        fetchResults();
+      if (query.trim().length >= 2) {
+        fetchResults(query.trim());
       } else {
+        abortRef.current?.abort();
         setResults([]);
         setIsOpen(false);
+        setIsLoading(false);
       }
     }, 300);
 
@@ -62,10 +64,16 @@ const NavbarSearch: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchResults = async () => {
+  const fetchResults = async (searchQuery: string) => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=6`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&limit=6`, {
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`Search failed with ${res.status}`);
       const data: { movies?: Array<{ id: string | number; title: string; slug: string; thumbnail: string; releaseYear: number; rating: number }> } = await res.json();
       const mapped = (data.movies || []).map(m => ({
         id: String(m.id),
@@ -79,9 +87,12 @@ const NavbarSearch: React.FC = () => {
       setIsOpen(mapped.length > 0);
       setSelectedIndex(-1);
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.error('Search error:', error);
     } finally {
-      setIsLoading(false);
+      if (abortRef.current === controller) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -103,7 +114,7 @@ const NavbarSearch: React.FC = () => {
   };
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-[280px] focus-within:max-w-[360px] transition-all duration-300 md:max-w-[220px] xl:max-w-[280px]">
+    <div ref={containerRef} suppressHydrationWarning className="relative w-full max-w-[280px] focus-within:max-w-[360px] transition-all duration-300 md:max-w-[220px] xl:max-w-[280px]">
       <form
         action="/search"
         method="GET"
@@ -145,70 +156,63 @@ const NavbarSearch: React.FC = () => {
         )}
       </form>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="absolute top-full left-0 right-0 mt-2 overflow-hidden rounded-premium border border-hairline bg-canvas shadow-premium z-50 glass-2026"
-          >
-            <div className="p-2">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-link border-t-transparent"></div>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1">
-                  {results.map((movie, index) => (
-                    <a
-                      key={movie.id}
-                      href={`/movie/${movie.slug}`}
-                      className={`flex items-center gap-3 rounded-lg p-2 transition-colors ${
-                        selectedIndex === index ? 'bg-canvas-soft-2 ring-1 ring-link/20' : 'hover:bg-canvas-soft'
-                      }`}
-                      onMouseEnter={() => setSelectedIndex(index)}
-                    >
-                      <div className="h-12 w-8 shrink-0 overflow-hidden rounded bg-canvas-soft-2">
-                        {movie.thumbnail ? (
-                          <img
-                            src={movie.thumbnail}
-                            alt={movie.title}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-[10px] text-mute">No img</div>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-bold text-ink">{movie.title}</div>
-                        <div className="text-xs text-mute">{movie.releaseYear}</div>
-                      </div>
-                      {movie.rating > 0 && (
-                        <div className="flex items-center gap-1 text-[10px] font-bold text-accent">
-                          <svg className="h-3 w-3 fill-current" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                          {movie.rating.toFixed(1)}
-                        </div>
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-2 overflow-hidden rounded-premium border border-hairline bg-canvas shadow-premium z-50 glass-2026">
+          <div className="p-2">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-link border-t-transparent"></div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {results.map((movie, index) => (
+                  <a
+                    key={movie.id}
+                    href={`/movie/${movie.slug}`}
+                    className={`flex items-center gap-3 rounded-lg p-2 transition-colors ${
+                      selectedIndex === index ? 'bg-canvas-soft-2 ring-1 ring-link/20' : 'hover:bg-canvas-soft'
+                    }`}
+                    onMouseEnter={() => setSelectedIndex(index)}
+                  >
+                    <div className="h-12 w-8 shrink-0 overflow-hidden rounded bg-canvas-soft-2">
+                      {movie.thumbnail ? (
+                        <img
+                          src={movie.thumbnail}
+                          alt={movie.title}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-[10px] text-mute">No img</div>
                       )}
-                    </a>
-                  ))}
-                  
-                  <div className="mt-1 border-t border-hairline pt-1">
-                    <a
-                      href={`/search?q=${encodeURIComponent(query)}`}
-                      className="flex items-center justify-center py-2 text-xs font-semibold text-link hover:underline"
-                    >
-                      View all results for "{query}"
-                    </a>
-                  </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-bold text-ink">{movie.title}</div>
+                      <div className="text-xs text-mute">{movie.releaseYear}</div>
+                    </div>
+                    {movie.rating > 0 && (
+                      <div className="flex items-center gap-1 text-[10px] font-bold text-accent">
+                        <svg className="h-3 w-3 fill-current" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        {movie.rating.toFixed(1)}
+                      </div>
+                    )}
+                  </a>
+                ))}
+
+                <div className="mt-1 border-t border-hairline pt-1">
+                  <a
+                    href={`/search?q=${encodeURIComponent(query)}`}
+                    className="flex items-center justify-center py-2 text-xs font-semibold text-link hover:underline"
+                  >
+                    View all results for "{query}"
+                  </a>
                 </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

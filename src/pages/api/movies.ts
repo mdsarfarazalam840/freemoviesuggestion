@@ -3,18 +3,21 @@ import { getMoviesPage } from '../../services/movieService';
 import { getCachedData, setCachedData } from '../../services/cache';
 
 const CACHE_TTL = 3600; // 1 hour
+const MAX_LIMIT = 30;
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ url }) => {
   try {
-    const page = parseInt(url.searchParams.get('page') || '1', 10);
-    const limit = parseInt(url.searchParams.get('limit') || '24', 10);
-    const region = url.searchParams.get('region');
-    const genre = url.searchParams.get('genre');
-    const ott = url.searchParams.get('ott');
+    const pageParam = Number(url.searchParams.get('page') || '1');
+    const limitParam = Number(url.searchParams.get('limit') || '24');
+    const page = Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 1;
+    const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(Math.floor(limitParam), MAX_LIMIT) : 24;
+    const region = url.searchParams.get('region')?.trim() || null;
+    const genre = url.searchParams.get('genre')?.trim() || null;
+    const ott = url.searchParams.get('ott')?.trim() || null;
 
-    const cacheKey = `movies:list:v2:p${page}:l${limit}:r${region || 'any'}:g${genre || 'any'}:o${ott || 'any'}`;
+    const cacheKey = `movies:list:v3:p${page}:l${limit}:r${region?.toLowerCase() || 'any'}:g${genre?.toLowerCase() || 'any'}:o${ott?.toLowerCase() || 'any'}`;
     
     const cached = await getCachedData<any>(cacheKey);
     if (cached) {

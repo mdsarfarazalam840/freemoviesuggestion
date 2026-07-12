@@ -17,10 +17,10 @@ export default function SuggestedMoviesMarquee({ movies, region }: Props) {
 
   return (
     <section aria-label={`Suggested ${region || ''} movies`} className="mt-20 mb-8">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-8">
-        <div className="flex items-center gap-4">
+      <div suppressHydrationWarning className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-8">
+        <div suppressHydrationWarning className="flex items-center gap-4">
           <span className="h-8 w-1.5 bg-accent rounded-full shrink-0"></span>
-          <div>
+          <div suppressHydrationWarning>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
               {region ? `More ${region} Suggestions` : "You Might Also Like"}
             </h2>
@@ -29,7 +29,7 @@ export default function SuggestedMoviesMarquee({ movies, region }: Props) {
         </div>
       </div>
 
-      <div className="relative w-full overflow-hidden">
+      <div suppressHydrationWarning className="relative w-full overflow-hidden">
         <SimpleMarquee
           baseVelocity={4}
           direction="left"
@@ -45,7 +45,7 @@ export default function SuggestedMoviesMarquee({ movies, region }: Props) {
               className="group relative mx-2 sm:mx-3 block w-[140px] sm:w-[160px] md:w-[180px] shrink-0 rounded-premium overflow-hidden border border-hairline bg-canvas-soft-2 shadow-premium transition-shadow duration-300 hover:shadow-premium-dark"
               aria-label={`View ${movie.title}`}
             >
-              <div className="aspect-[2/3] overflow-hidden">
+              <div suppressHydrationWarning className="aspect-[2/3] overflow-hidden">
                 <img
                   src={movie.thumbnail || PLACEHOLDER_SVG}
                   alt={movie.title}
@@ -57,12 +57,12 @@ export default function SuggestedMoviesMarquee({ movies, region }: Props) {
                     (e.currentTarget as HTMLImageElement).src = PLACEHOLDER_SVG
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                <div suppressHydrationWarning className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div suppressHydrationWarning className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
                   <p className="text-sm font-bold text-white truncate drop-shadow-md">
                     {movie.title}
                   </p>
-                  <div className="flex items-center gap-1 mt-1">
+                  <div suppressHydrationWarning className="flex items-center gap-1 mt-1">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="12"
