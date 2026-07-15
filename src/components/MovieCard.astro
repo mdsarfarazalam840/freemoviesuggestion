@@ -1,5 +1,6 @@
 ---
-import type { Movie } from '../data/movies';
+import type { Movie, MoodTag } from '../data/movies';
+import { MOOD_EMOJI } from '../data/movies';
 
 interface Props {
   movie: Movie;
@@ -8,12 +9,18 @@ interface Props {
 
 const { movie, rank } = Astro.props;
 const ottPlatforms = movie.ottPlatforms || [];
+const firstMood = movie.moodTags?.[0];
+const moodEmoji = firstMood ? MOOD_EMOJI[firstMood as MoodTag] || '' : '';
+const ws = movie.watchScore ?? 0;
+const wsColor = ws >= 85 ? 'text-emerald-400' : ws >= 70 ? 'text-link' : ws >= 55 ? 'text-accent' : 'text-mute';
+const wsPct = ws ? Math.min(ws, 100) : 0;
 ---
 
 <div 
   class="group bento-card relative flex flex-col overflow-hidden movie-card h-full"
   data-genres={(movie.genres || []).join(',').toLowerCase()}
   data-ott={ottPlatforms.map(p => p.name).join(',').toLowerCase()}
+  data-mood={firstMood ? firstMood.toLowerCase() : ''}
 >
   <a href={`/movie/${movie.slug}`} class="absolute inset-0 z-20" aria-label={`View details for ${movie.title}`}></a>
   
@@ -22,7 +29,7 @@ const ottPlatforms = movie.ottPlatforms || [];
       {rank}
     </div>
   )}
-  
+
   <div class="aspect-[2/3] relative overflow-hidden bg-canvas-soft-2">
     <img 
       src={movie.thumbnail || 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450"><rect fill="%23334155" width="300" height="450"/><text x="150" y="210" font-family="sans-serif" font-size="18" font-weight="bold" fill="%23F5C518" text-anchor="middle">No Image</text></svg>')} 
@@ -35,7 +42,16 @@ const ottPlatforms = movie.ottPlatforms || [];
     />
     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
     
-    <!-- Quick Action Badge -->
+    {ws && (
+      <div class="absolute top-3 right-3 z-30 flex flex-col items-center">
+        <svg class="w-12 h-12 -rotate-90 drop-shadow-lg" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" stroke-width="2.5" class="text-white/20" />
+          <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray={`${wsPct} ${100 - wsPct}`} stroke-dashoffset="0" stroke-linecap="round" class={`${wsColor}`} />
+        </svg>
+        <span class="absolute inset-0 flex items-center justify-center text-xs font-black text-white drop-shadow-md">{ws}</span>
+      </div>
+    )}
+
     <div class="absolute bottom-4 left-4 right-4 z-10 translate-y-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
       <span class="inline-flex w-full items-center justify-center rounded-pill bg-white/20 px-3 py-2 text-xs font-bold text-white backdrop-blur-md">
         View Suggestion Details
@@ -48,15 +64,32 @@ const ottPlatforms = movie.ottPlatforms || [];
       <span class="text-[11px] font-bold uppercase tracking-widest text-link">
         {movie.region} • {movie.releaseYear}
       </span>
-      <div class="flex items-center gap-1.5 rounded-pill bg-accent/10 px-2 py-0.5">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" class="text-accent"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        <span class="text-xs font-bold text-ink">{movie.rating}</span>
+      <div class="flex items-center gap-1">
+        {firstMood && moodEmoji && (
+          <span class="text-[10px] font-bold text-mute bg-canvas-soft-2 rounded-pill px-2 py-0.5 border border-hairline">
+            {moodEmoji} {firstMood}
+          </span>
+        )}
       </div>
     </div>
     
     <h3 class="text-lg font-bold text-ink transition-colors group-hover:text-link leading-tight">
       {movie.title}
     </h3>
+    
+    <div class="mt-2 flex items-center gap-2">
+      {movie.imdbUrl && (
+        <a href={movie.imdbUrl} target="_blank" rel="noopener noreferrer" class="z-30 inline-flex items-center gap-1 rounded-pill bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all" title="View on IMDB">
+          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M13.6 10.6v4.2c.3.1.6.2 1 .2.7 0 1.2-.3 1.2-1.1v-2.6c0-.7-.4-1-1.1-1-.5 0-.9.1-1.1.3zm-4.7 0H8v4.6h1.1c.8 0 1.2-.3 1.2-1.1v-2.4c0-.7-.4-1.1-1.2-1.1zm10.5-5H4.6C3.2 5.6 2 6.7 2 8.1v7.8c0 1.4 1.2 2.6 2.6 2.6h14.8c1.4 0 2.6-1.2 2.6-2.6V8.1c0-1.4-1.2-2.5-2.6-2.5zM10 11.4c0 .9-.4 1.5-1.1 1.8l1.4 1.7h-1.3L7.9 13.4h-.4v1.5H6.2V8.7h1.9c.9 0 1.4.3 1.4 1.2v1.5zm4.4 2.4c0 .9-.3 1.4-1 1.7-1.4.7-2.4 0-2.4-1.4v-3c0-.9.3-1.4 1-1.7.4-.2.9-.3 1.4-.3 1.6 0 2.4.9 2.4 2.4v2.3zm4.1-1.7c0 .4-.3.7-.7.7h-1.5v1.2h-1.1V8.7H17c.8 0 1.3.3 1.3 1.2v.7c0 .5-.3.9-.7 1 .4.2.9.4.9 1v1.1z"/></svg>
+          IMDB
+        </a>
+      )}
+      {movie.rtUrl && (
+        <a href={movie.rtUrl} target="_blank" rel="noopener noreferrer" class="z-30 inline-flex items-center gap-1 rounded-pill bg-red-50 dark:bg-red-900/20 px-2 py-0.5 text-[10px] font-bold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40 transition-all" title="Check Rotten Tomatoes">
+          🍅 RT
+        </a>
+      )}
+    </div>
     
     <p class="mt-3 text-sm text-body line-clamp-2 leading-relaxed opacity-80">
       {movie.description}
@@ -77,6 +110,3 @@ const ottPlatforms = movie.ottPlatforms || [];
     </div>
   </div>
 </div>
-
-
-

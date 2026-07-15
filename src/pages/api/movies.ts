@@ -16,8 +16,9 @@ export const GET: APIRoute = async ({ url }) => {
     const region = url.searchParams.get('region')?.trim() || null;
     const genre = url.searchParams.get('genre')?.trim() || null;
     const ott = url.searchParams.get('ott')?.trim() || null;
+    const mood = url.searchParams.get('mood')?.trim() || null;
 
-    const cacheKey = `movies:list:v3:p${page}:l${limit}:r${region?.toLowerCase() || 'any'}:g${genre?.toLowerCase() || 'any'}:o${ott?.toLowerCase() || 'any'}`;
+    const cacheKey = `movies:list:v3:p${page}:l${limit}:r${region?.toLowerCase() || 'any'}:g${genre?.toLowerCase() || 'any'}:o${ott?.toLowerCase() || 'any'}:m${mood?.toLowerCase() || 'any'}`;
     
     const cached = await getCachedData<any>(cacheKey);
     if (cached) {
@@ -31,7 +32,7 @@ export const GET: APIRoute = async ({ url }) => {
       });
     }
 
-    const data = await getMoviesPage({ page, limit, region, genre, ott });
+    const data = await getMoviesPage({ page, limit, region, genre, ott, mood });
     
     await setCachedData(cacheKey, data, CACHE_TTL);
     

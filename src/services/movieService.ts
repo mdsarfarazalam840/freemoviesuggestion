@@ -18,6 +18,12 @@ type MovieRow = Partial<Movie> & {
   ott_platforms?: unknown;
   genres?: unknown;
   overview?: string;
+  mood_tags?: unknown;
+  watchscore?: number;
+  imdb_id?: string;
+  rt_tomatometer?: number;
+  rt_audience_score?: number;
+  rt_certification?: string;
 };
 
 export type MovieQueryOptions = {
@@ -27,6 +33,7 @@ export type MovieQueryOptions = {
   ott?: string | null;
   region?: string | null;
   topOnly?: boolean;
+  mood?: string | null;
 };
 
 export type MoviePage = {
@@ -129,6 +136,8 @@ function normalizeMovie(row: MovieRow): Movie {
     slug = `${slugify(title)}-${tmdbId}`;
   }
 
+  const moodTagsRaw = parseMaybeJson(row.moodTags ?? row.mood_tags);
+
   return {
     id: String(row.id || tmdbId || slug || title),
     title,
@@ -145,6 +154,14 @@ function normalizeMovie(row: MovieRow): Movie {
     ottPlatforms: normalizeOttPlatforms(row.ottPlatforms || row.ott_platforms),
     isTop10: row.isTop10 ?? row.is_top_10 ?? false,
     rank: row.rank,
+    imdbId: row.imdb_id || undefined,
+    imdbUrl: row.imdb_id ? `https://www.imdb.com/title/${row.imdb_id}` : undefined,
+    rtUrl: row.title ? `https://www.rottentomatoes.com/search?search=${encodeURIComponent(row.title)}` : undefined,
+    rtTomatometer: row.rt_tomatometer || undefined,
+    rtAudienceScore: row.rt_audience_score || undefined,
+    rtCertification: row.rt_certification || undefined,
+    watchScore: row.watchscore || undefined,
+    moodTags: Array.isArray(moodTagsRaw) ? moodTagsRaw : undefined,
   };
 }
 
@@ -189,9 +206,10 @@ function movieCacheKey(prefix: string, options: MovieQueryOptions = {}) {
     options.genre ? `genre:${options.genre.toLowerCase()}` : null,
     options.ott ? `ott:${options.ott.toLowerCase()}` : null,
     options.topOnly ? 'top:1' : null,
+    options.mood ? `mood:${options.mood.toLowerCase()}` : null,
   ].filter(Boolean);
 
-  return `remote_movies:v8:${parts.join(':')}`;
+  return `remote_movies:v9:${parts.join(':')}`;
 }
 
 function matchesFilter(value: string | undefined, filter: string): boolean {
@@ -222,10 +240,13 @@ function getLocalMoviePage(options: MovieQueryOptions = {}): FetchMoviePageResul
   const genre = normalizeFilter(options.genre);
   const ott = normalizeFilter(options.ott);
 
+  const mood = normalizeFilter(options.mood);
+
   const filteredMovies = localMovies
     .filter((movie) => !region || matchesFilter(movie.region, region))
     .filter((movie) => !genre || movieHasGenre(movie, genre))
     .filter((movie) => !ott || movieHasOttPlatform(movie, ott))
+    .filter((movie) => !mood || (movie.moodTags && movie.moodTags.some((mt) => matchesFilter(mt, mood))))
     .filter((movie) => !options.topOnly || movie.isTop10)
     .sort(sortMoviesForCatalog);
 
@@ -246,6 +267,7 @@ function applyMovieFilters(query: any, options: MovieQueryOptions = {}) {
   const region = normalizeFilter(options.region);
   const genre = normalizeFilter(options.genre);
   const ott = normalizeFilter(options.ott);
+  const mood = normalizeFilter(options.mood);
 
   if (region) query = query.ilike('region', region);
   if (genre) {
@@ -258,6 +280,7 @@ function applyMovieFilters(query: any, options: MovieQueryOptions = {}) {
   }
   if (ott) query = query.filter('ott_platforms', 'cs', JSON.stringify([{ name: ott }]));
   if (options.topOnly) query = query.eq('is_top_10', true);
+  if (mood) query = query.filter('mood_tags', 'cs', JSON.stringify([mood]));
 
   return query;
 }

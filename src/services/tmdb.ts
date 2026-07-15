@@ -78,5 +78,9 @@ export async function discoverMovies(page = 1, filters: Record<string, string> =
 }
 
 export async function fetchMovieFullDetails(tmdbId: number) {
-  return fetchWithRetry(`${BASE_URL}/movie/${tmdbId}?append_to_response=credits`);
+  return fetchWithRetry(`${BASE_URL}/movie/${tmdbId}?append_to_response=credits,external_ids`);
+}
+
+export async function fetchMovieExternalIds(tmdbId: number) {
+  return fetchWithRetry(`${BASE_URL}/movie/${tmdbId}/external_ids`);
 }

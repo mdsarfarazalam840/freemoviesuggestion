@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import { fetchMoviesByLanguage, fetchTrendingMovies, discoverMovies, fetchMovieFullDetails } from './tmdb';
 import { redis } from '../lib/redis';
 import { OTT_PLATFORMS, type MovieRegion } from '../data/movies';
+import { computeWatchScore, assignMoodTags } from './enrichment';
 
 const TMDB_GENRES = new Map<number, string>([
   [28, 'Action'],
@@ -114,6 +115,18 @@ function mapTmdbMovie(movie: any, region: MovieRegion, index: number, isTop10 = 
     profile_path: c.profile_path
   })) || [];
 
+  const genres = Array.isArray(movie.genres) 
+    ? movie.genres.map((g: any) => g.name)
+    : (Array.isArray(movie.genre_ids) ? movie.genre_ids.map((id: number) => TMDB_GENRES.get(id)).filter(Boolean) : []);
+
+  const releaseYear = releaseDate ? new Date(releaseDate).getFullYear() : null;
+
+  const imdbId = movie.external_ids?.imdb_id || null;
+
+  const moodTags = assignMoodTags(genres, movie.vote_average || 0, movie.vote_count || 0);
+
+  const watchScore = computeWatchScore(movie.vote_average || 0, movie.popularity || 0, releaseYear);
+
   return {
     tmdb_id: movie.id,
     title,
@@ -124,15 +137,13 @@ function mapTmdbMovie(movie: any, region: MovieRegion, index: number, isTop10 = 
     poster_path: movie.poster_path || '',
     backdrop_path: movie.backdrop_path || '',
     release_date: releaseDate,
-    release_year: releaseDate ? new Date(releaseDate).getFullYear() : null,
+    release_year: releaseYear,
     runtime: movie.runtime || 0,
     vote_average: movie.vote_average || 0,
     vote_count: movie.vote_count || 0,
     popularity: movie.popularity || 0,
     original_language: movie.original_language || 'en',
-    genres: Array.isArray(movie.genres) 
-      ? movie.genres.map((g: any) => g.name)
-      : (Array.isArray(movie.genre_ids) ? movie.genre_ids.map((id: number) => TMDB_GENRES.get(id)).filter(Boolean) : []),
+    genres,
     director,
     top_cast: topCast,
     ott_platforms: [OTT_PLATFORMS[Math.floor(Math.random() * OTT_PLATFORMS.length)]],
@@ -140,6 +151,9 @@ function mapTmdbMovie(movie: any, region: MovieRegion, index: number, isTop10 = 
     rating: movie.vote_average || 0,
     is_top_10: isTop10,
     rank: isTop10 ? index + 1 : null,
+    imdb_id: imdbId,
+    watchscore: watchScore,
+    mood_tags: moodTags,
     tmdb_updated_at: new Date().toISOString()
   };
 }
@@ -373,8 +387,12 @@ export async function syncTrendingMovies() {
     return results
       .filter((m) => m.poster_path) // skip movies without a poster (mirrors syncMovies guard)
       .slice(0, limit)
-      .map((m, i) => {
+      .map((m) => {
       const releaseDate = m.release_date || null;
+      const releaseYear = releaseDate ? new Date(releaseDate).getFullYear() : null;
+      const genres = m.genre_ids?.map((id: number) => TMDB_GENRES.get(id)).filter(Boolean) || [];
+      const moodTags = assignMoodTags(genres, m.vote_average || 0, m.vote_count || 0);
+      const watchScore = computeWatchScore(m.vote_average || 0, m.popularity || 0, releaseYear);
       return {
         tmdb_id: m.id,
         title: m.title || m.name,
@@ -385,15 +403,17 @@ export async function syncTrendingMovies() {
         poster_path: m.poster_path || '',
         backdrop_path: m.backdrop_path || '',
         release_date: releaseDate,
-        release_year: releaseDate ? new Date(releaseDate).getFullYear() : null,
+        release_year: releaseYear,
         vote_average: m.vote_average || 0,
         vote_count: m.vote_count || 0,
         popularity: m.popularity || 0,
         original_language: m.original_language || 'en',
-        genres: m.genre_ids?.map((id: number) => TMDB_GENRES.get(id)).filter(Boolean) || [],
+        genres,
         region,
         rating: m.vote_average || 0,
         ott_platforms: [OTT_PLATFORMS[0]],
+        watchscore: watchScore,
+        mood_tags: moodTags,
         tmdb_updated_at: new Date().toISOString()
       };
     });
