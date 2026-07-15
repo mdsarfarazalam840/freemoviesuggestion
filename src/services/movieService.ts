@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { hasSupabaseConfig } from '../lib/env';
 import { getCachedData, setCachedData } from './cache';
-import { movies as localMovies, OTT_PLATFORMS } from '../data/movies';
+import { movies as localMovies, OTT_PLATFORMS, MOOD_TAGS } from '../data/movies';
 import type { Movie, OTTPlatform } from '../data/movies';
 
 const DEFAULT_PAGE = 1;
@@ -280,7 +280,10 @@ function applyMovieFilters(query: any, options: MovieQueryOptions = {}) {
   }
   if (ott) query = query.filter('ott_platforms', 'cs', JSON.stringify([{ name: ott }]));
   if (options.topOnly) query = query.eq('is_top_10', true);
-  if (mood) query = query.filter('mood_tags', 'cs', JSON.stringify([mood]));
+  if (mood) {
+    const knownMood = MOOD_TAGS.find(t => t.toLowerCase() === mood.toLowerCase());
+    if (knownMood) query = query.filter('mood_tags', 'cs', JSON.stringify([knownMood]));
+  }
 
   return query;
 }

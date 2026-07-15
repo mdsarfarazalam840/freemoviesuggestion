@@ -36,3 +36,5 @@ graphify-*/
 .env.docker
 
 test_*
+
+test-*

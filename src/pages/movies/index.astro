@@ -13,6 +13,7 @@ const page = Number(Astro.url.searchParams.get('page') || '1');
 const selectedGenre = Astro.url.searchParams.get('genre');
 const selectedOtt = Astro.url.searchParams.get('ott');
 const selectedMood = Astro.url.searchParams.get('mood');
+const normalizedMood = MOOD_TAGS.find(t => t.toLowerCase() === (selectedMood || '').toLowerCase()) || selectedMood;
 let pageData = { movies: [] as any[], count: 0, page: 1, limit: 24, totalPages: 0 };
 try {
   pageData = await getMoviesPage({ page, limit: 24, genre: selectedGenre, ott: selectedOtt, mood: selectedMood });
@@ -143,7 +144,7 @@ const buildPageHref = (nextPage: number) => {
             <h1 class="text-2xl font-bold tracking-tight text-ink">
               <span id="filter-title">
                 { selectedMood
-                  ? `${MOOD_EMOJI[selectedMood as keyof typeof MOOD_EMOJI] || ''} ${selectedMood} Movies`
+                  ? `${MOOD_EMOJI[normalizedMood as keyof typeof MOOD_EMOJI] || ''} ${selectedMood} Movies`
                   : (selectedGenre && selectedOtt) 
                   ? `${selectedGenre} Movies on ${selectedOtt}` 
                   : (selectedGenre ? `${selectedGenre} Movies` : (selectedOtt ? `Movies on ${selectedOtt}` : 'All Movies')) 
@@ -199,8 +200,9 @@ const buildPageHref = (nextPage: number) => {
       const activeMood = url.searchParams.get('mood');
       
       if (activeMood) {
-        const emojiMap = {'Intense':'🔥','Feel-Good':'☀️','Mind-Bender':'🤯','Emotional':'💔','Easy Watch':'🍿','Edge of Seat':'⚡','Epic':'🏆','Award-Worthy':'🌟','Dark & Gritty':'🌑','Lighthearted':'🦋'};
-        filterTitle.textContent = `${emojiMap[activeMood as keyof typeof emojiMap] || ''} ${activeMood} Movies`;
+        const emojiMap: Record<string, string> = {'Intense':'🔥','Feel-Good':'☀️','Mind-Bender':'🤯','Emotional':'💔','Easy Watch':'🍿','Edge of Seat':'⚡','Epic':'🏆','Award-Worthy':'🌟','Dark & Gritty':'🌑','Lighthearted':'🦋'};
+        const matchedKey = Object.keys(emojiMap).find(k => k.toLowerCase() === activeMood?.toLowerCase());
+        filterTitle.textContent = `${matchedKey ? emojiMap[matchedKey] : ''} ${activeMood} Movies`;
       } else if (activeGenre && activeOtt) {
         filterTitle.textContent = `${activeGenre} Movies on ${activeOtt}`;
       } else if (activeGenre) {
