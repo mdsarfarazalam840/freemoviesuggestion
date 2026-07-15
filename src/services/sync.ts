@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { fetchMoviesByLanguage, fetchTrendingMovies, discoverMovies, fetchMovieFullDetails } from './tmdb';
+import { fetchMoviesByLanguage, fetchTrendingMovies, discoverMovies, fetchMovieFullDetails, fetchMovieExternalIds } from './tmdb';
 import { redis } from '../lib/redis';
 import { OTT_PLATFORMS, type MovieRegion } from '../data/movies';
 import { computeWatchScore, assignMoodTags } from './enrichment';
@@ -304,15 +304,21 @@ export async function syncMovies(targetCount = 1000) {
 
       try {
         stats.fetched++;
-        const movie = SYNC_FULL_DETAILS() ? await fetchMovieFullDetails(basicMovie.id) : basicMovie;
+
+        let movie: any;
+
+        if (SYNC_FULL_DETAILS()) {
+          movie = await fetchMovieFullDetails(basicMovie.id);
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } else {
+          movie = basicMovie;
+          movie.external_ids = await fetchMovieExternalIds(basicMovie.id).catch(() => null);
+        }
+
         const region = source.region || getRegionForLanguage(movie.original_language);
 
         const mapped = mapTmdbMovie(movie, region, totalSynced + movieBatch.length);
         movieBatch.push(mapped);
-        
-        if (SYNC_FULL_DETAILS()) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
       } catch (err) {
         console.error(`Failed to fetch details for movie ${basicMovie.id}:`, err);
         stats.failed++;
