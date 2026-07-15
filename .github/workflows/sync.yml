@@ -34,6 +34,6 @@ jobs:
 
       - run: npm ci
 
-      - name: Run sync
+      - name: Run sync + enrichment
         run: npx tsx scripts/run-sync.ts ${{ inputs.target || '10000' }}
         timeout-minutes: 60

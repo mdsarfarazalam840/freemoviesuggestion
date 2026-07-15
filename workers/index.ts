@@ -1,4 +1,5 @@
 import { syncMovies, syncTrendingMovies } from '../src/services/sync';
+import { enrichWatchScoreAndMoodTags } from '../src/services/enrichment';
 
 interface ScheduledEvent {
   cron: string;
@@ -52,7 +53,9 @@ async function runDailySync() {
     console.log('Starting daily sync...');
     await syncTrendingMovies();
     await syncMovies(1000);
-    console.log('Daily sync complete.');
+    console.log('Daily sync complete. Computing watchScore/moodTags...');
+    await enrichWatchScoreAndMoodTags(200);
+    console.log('Daily enrichment complete.');
   } catch (error) {
     console.error('Daily sync failed:', error);
   }

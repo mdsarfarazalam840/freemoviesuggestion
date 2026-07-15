@@ -4,6 +4,8 @@ import Navbar from '../../components/Navbar.astro';
 import Footer from '../../components/Footer.astro';
 import SuggestedMoviesMarquee from '../../components/SuggestedMoviesMarquee.tsx';
 import { getMovieBySlug, getRegionFilteredRecommendations } from '../../services/movieService';
+import { MOOD_EMOJI, MOOD_DESCRIPTION } from '../../data/movies';
+import type { MoodTag } from '../../data/movies';
 
 export const prerender = false;
 
@@ -116,15 +118,28 @@ const posterSrc = (movie?.thumbnail && movie.thumbnail.trim()) || PLACEHOLDER_SV
             <h1 class="text-3xl sm:text-5xl lg:text-7xl font-bold tracking-tight text-ink mb-6 drop-shadow-sm break-words">{movie.title}</h1>
             <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 sm:gap-8">
               <div class="flex items-center gap-3">
-                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-ink shadow-lg">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <div class="relative flex items-center justify-center">
+                  <svg class="w-14 h-14 sm:w-16 sm:h-16 -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" stroke-width="2.5" class="text-hairline-strong" />
+                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray={`${Math.min(movie.watchScore || 0, 100)} ${100 - Math.min(movie.watchScore || 0, 100)}`} stroke-dashoffset="0" stroke-linecap="round" class="text-link" />
+                  </svg>
+                  <span class="absolute text-lg sm:text-2xl font-black text-ink">{movie.watchScore || '—'}</span>
                 </div>
                 <div>
-                  <div class="text-2xl font-black text-ink">{movie.rating}<span class="text-sm font-medium text-mute">/10</span></div>
-                  <div class="text-[10px] font-bold uppercase tracking-widest text-mute">Viewer Score</div>
+                  <div class="text-xs font-bold uppercase tracking-widest text-mute">WatchScore</div>
+                  <div class="text-[10px] text-body">Our Unique Score</div>
                 </div>
               </div>
-              <div class="flex gap-3">
+              <div class="flex items-center gap-2 border-l border-hairline pl-4 sm:pl-6">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-900/20">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="text-amber-500"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </div>
+                <div>
+                  <div class="text-lg font-bold text-ink">{movie.rating}<span class="text-xs font-medium text-mute">/10</span></div>
+                  <div class="text-[9px] font-bold uppercase tracking-widest text-mute">TMDB</div>
+                </div>
+              </div>
+              <div class="flex gap-2 flex-wrap">
                 {movie.genres.map((genre: string) => (
                   <a 
                     href={`/genre/${genre.toLowerCase()}`} 
@@ -134,6 +149,30 @@ const posterSrc = (movie?.thumbnail && movie.thumbnail.trim()) || PLACEHOLDER_SV
                   </a>
                 ))}
               </div>
+            </div>
+            {movie.moodTags && movie.moodTags.length > 0 && (
+              <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-4">
+                {movie.moodTags.map((tag: MoodTag) => (
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill bg-gradient-to-r from-link/10 to-accent/10 border border-link/20 text-sm font-bold text-ink" title={MOOD_DESCRIPTION[tag]}>
+                    {MOOD_EMOJI[tag]} {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div class="flex gap-2 mt-4 flex-wrap">
+              {movie.imdbUrl && (
+                <a href={movie.imdbUrl} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 text-sm font-bold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.67 0H5.33C2.38 0 0 2.38 0 5.33v13.34C0 21.62 2.38 24 5.33 24h13.34c2.95 0 5.33-2.38 5.33-5.33V5.33C24 2.38 21.62 0 18.67 0zm-9.4 16.67H6.67V7.33h2.6v9.34zm4.66 0h-2.6v-3.7h2.6c1.03 0 1.87-.84 1.87-1.87v-.72c0-1.04-.84-1.87-1.87-1.87h-4.47v9.34h2.6v-3.35h.5l1.12 3.35h2.76l-1.44-4.1c.7-.33 1.2-1.05 1.2-1.88v-.72c0-1.24-1-2.24-2.23-2.24H13.6v3.42h2.36v.65c0 .34-.28.62-.62.62h-2.24v3.35zm7.5-1.87c0 1.04-.84 1.87-1.87 1.87h-2.1V7.33h2.1c1.03 0 1.87.84 1.87 1.87v5.6z"/></svg>
+                  View on IMDB
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10M7 17L17 7"/></svg>
+                </a>
+              )}
+              {movie.rtUrl && (
+                <a href={movie.rtUrl} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 rounded-pill bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 text-sm font-bold hover:bg-red-100 dark:hover:bg-red-900/40 transition-all">
+                  🍅 Check Rotten Tomatoes
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10M7 17L17 7"/></svg>
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -155,10 +194,13 @@ const posterSrc = (movie?.thumbnail && movie.thumbnail.trim()) || PLACEHOLDER_SV
               </p>
             </div>
 
-            <h2 class="text-3xl font-bold text-ink mb-10 flex items-center gap-3">
+            <h2 class="text-3xl font-bold text-ink mb-4 flex items-center gap-3">
               <span class="h-8 w-1.5 bg-accent rounded-full"></span>
               Experience on Streaming
             </h2>
+            <p class="text-sm text-body mb-6">
+              Available on <strong class="text-ink">{movie.ottPlatforms.length}</strong> streaming {movie.ottPlatforms.length === 1 ? 'platform' : 'platforms'}
+            </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {movie.ottPlatforms.map((platform: { url: string; logo: string; name: string }) => (
                 <div class="flex flex-col gap-3 group">
@@ -206,6 +248,35 @@ const posterSrc = (movie?.thumbnail && movie.thumbnail.trim()) || PLACEHOLDER_SV
                 <div class="flex justify-between items-center border-b border-hairline pb-4">
                   <dt class="text-[10px] font-black uppercase tracking-widest text-mute">Genre Spectrum</dt>
                   <dd class="text-sm font-bold text-ink text-right">{movie.genres.join(', ')}</dd>
+                </div>
+                <div class="flex justify-between items-center border-b border-hairline pb-4">
+                  <dt class="text-[10px] font-black uppercase tracking-widest text-mute">WatchScore</dt>
+                  <dd class="text-sm font-bold text-ink text-right">
+                    {movie.watchScore ? `${movie.watchScore}/100 — ${movie.watchScore >= 90 ? 'Excellent' : movie.watchScore >= 80 ? 'Great' : movie.watchScore >= 70 ? 'Good' : movie.watchScore >= 60 ? 'Fair' : 'Mixed'}` : '—'}
+                  </dd>
+                </div>
+                <div class="flex justify-between items-center border-b border-hairline pb-4">
+                  <dt class="text-[10px] font-black uppercase tracking-widest text-mute">Mood</dt>
+                  <dd class="text-sm font-bold text-ink text-right">
+                    {movie.moodTags && movie.moodTags.length > 0
+                      ? movie.moodTags.map((tag: MoodTag) => `${MOOD_EMOJI[tag]} ${tag}`).join(', ')
+                      : '—'}
+                  </dd>
+                </div>
+                <div class="flex justify-between items-center border-b border-hairline pb-4">
+                  <dt class="text-[10px] font-black uppercase tracking-widest text-mute">OTT Availability</dt>
+                  <dd class="text-sm font-bold text-ink text-right">{movie.ottPlatforms.length} {movie.ottPlatforms.length === 1 ? 'platform' : 'platforms'}</dd>
+                </div>
+                <div class="flex justify-between items-center border-b border-hairline pb-4">
+                  <dt class="text-[10px] font-black uppercase tracking-widest text-mute">Reviews</dt>
+                  <dd class="text-sm font-bold text-ink text-right">
+                    {movie.imdbUrl || movie.rtUrl ? (
+                      <span class="flex gap-2">
+                        {movie.imdbUrl && <a href={movie.imdbUrl} target="_blank" rel="noopener noreferrer" class="text-amber-600 dark:text-amber-400 hover:underline">IMDB</a>}
+                        {movie.rtUrl && <a href={movie.rtUrl} target="_blank" rel="noopener noreferrer" class="text-red-500 dark:text-red-400 hover:underline">RT</a>}
+                      </span>
+                    ) : '—'}
+                  </dd>
                 </div>
               </dl>
             </div>

@@ -1,3 +1,44 @@
+export type MoodTag = 'Intense' | 'Feel-Good' | 'Mind-Bender' | 'Emotional' | 'Easy Watch' | 'Edge of Seat' | 'Epic' | 'Award-Worthy' | 'Dark & Gritty' | 'Lighthearted';
+
+export const MOOD_TAGS: MoodTag[] = [
+  'Intense',
+  'Feel-Good',
+  'Mind-Bender',
+  'Emotional',
+  'Easy Watch',
+  'Edge of Seat',
+  'Epic',
+  'Award-Worthy',
+  'Dark & Gritty',
+  'Lighthearted',
+];
+
+export const MOOD_EMOJI: Record<MoodTag, string> = {
+  'Intense': '🔥',
+  'Feel-Good': '☀️',
+  'Mind-Bender': '🤯',
+  'Emotional': '💔',
+  'Easy Watch': '🍿',
+  'Edge of Seat': '⚡',
+  'Epic': '🏆',
+  'Award-Worthy': '🌟',
+  'Dark & Gritty': '🌑',
+  'Lighthearted': '🦋',
+};
+
+export const MOOD_DESCRIPTION: Record<MoodTag, string> = {
+  'Intense': 'High-energy, gripping, and pulse-pounding',
+  'Feel-Good': 'Uplifting, warm, and leaves you smiling',
+  'Mind-Bender': 'Complex plots that make you think',
+  'Emotional': 'Deep feels, tears, and heartfelt moments',
+  'Easy Watch': 'Relaxed, fun, and effortless viewing',
+  'Edge of Seat': 'Suspenseful, thrilling, and unpredictable',
+  'Epic': 'Grand scale, sweeping stories, and spectacle',
+  'Award-Worthy': 'Critically acclaimed with standout craft',
+  'Dark & Gritty': 'Raw, intense, and morally complex',
+  'Lighthearted': 'Playful, cheerful, and carefree',
+};
+
 export interface Movie {
   id: string;
   title: string;
@@ -11,6 +52,14 @@ export interface Movie {
   ottPlatforms: OTTPlatform[];
   isTop10?: boolean;
   rank?: number;
+  imdbId?: string;
+  imdbUrl?: string;
+  rtUrl?: string;
+  rtTomatometer?: number;
+  rtAudienceScore?: number;
+  rtCertification?: string;
+  watchScore?: number;
+  moodTags?: MoodTag[];
 }
 
 export interface OTTPlatform {
@@ -77,7 +126,12 @@ export const movies: Movie[] = [
     genres: ['Sci-Fi', 'Drama'],
     ottPlatforms: [OTT_PLATFORMS[0], OTT_PLATFORMS[1]],
     isTop10: true,
-    rank: 1
+    rank: 1,
+    imdbId: 'tt0816692',
+    imdbUrl: 'https://www.imdb.com/title/tt0816692',
+    rtUrl: 'https://www.rottentomatoes.com/search?search=Interstellar',
+    watchScore: 92,
+    moodTags: ['Mind-Bender', 'Emotional', 'Epic']
   },
   {
     id: '2',
@@ -91,7 +145,12 @@ export const movies: Movie[] = [
     genres: ['Drama', 'Action'],
     ottPlatforms: [OTT_PLATFORMS[3], OTT_PLATFORMS[0]],
     isTop10: true,
-    rank: 2
+    rank: 2,
+    imdbId: 'tt5074352',
+    imdbUrl: 'https://www.imdb.com/title/tt5074352',
+    rtUrl: 'https://www.rottentomatoes.com/search?search=Dangal',
+    watchScore: 88,
+    moodTags: ['Emotional', 'Award-Worthy', 'Intense']
   },
   {
     id: '3',
@@ -105,7 +164,12 @@ export const movies: Movie[] = [
     genres: ['Action', 'Drama'],
     ottPlatforms: [OTT_PLATFORMS[0], OTT_PLATFORMS[4]],
     isTop10: true,
-    rank: 3
+    rank: 3,
+    imdbId: 'tt8178634',
+    imdbUrl: 'https://www.imdb.com/title/tt8178634',
+    rtUrl: 'https://www.rottentomatoes.com/search?search=RRR',
+    watchScore: 84,
+    moodTags: ['Epic', 'Intense', 'Emotional']
   },
   {
     id: '4',
@@ -119,7 +183,12 @@ export const movies: Movie[] = [
     genres: ['Action', 'Crime', 'Drama'],
     ottPlatforms: [OTT_PLATFORMS[0], OTT_PLATFORMS[2]],
     isTop10: true,
-    rank: 4
+    rank: 4,
+    imdbId: 'tt0468569',
+    imdbUrl: 'https://www.imdb.com/title/tt0468569',
+    rtUrl: 'https://www.rottentomatoes.com/search?search=The+Dark+Knight',
+    watchScore: 95,
+    moodTags: ['Dark & Gritty', 'Intense', 'Award-Worthy']
   },
   {
     id: '5',
@@ -133,7 +202,12 @@ export const movies: Movie[] = [
     genres: ['Action', 'Thriller'],
     ottPlatforms: [OTT_PLATFORMS[1]],
     isTop10: true,
-    rank: 5
+    rank: 5,
+    imdbId: 'tt9389998',
+    imdbUrl: 'https://www.imdb.com/title/tt9389998',
+    rtUrl: 'https://www.rottentomatoes.com/search?search=Pushpa+The+Rise',
+    watchScore: 80,
+    moodTags: ['Intense', 'Edge of Seat', 'Dark & Gritty']
   },
   {
     id: '6',
@@ -147,7 +221,12 @@ export const movies: Movie[] = [
     genres: ['Drama', 'Comedy'],
     ottPlatforms: [OTT_PLATFORMS[0]],
     isTop10: true,
-    rank: 6
+    rank: 6,
+    imdbId: 'tt0169102',
+    imdbUrl: 'https://www.imdb.com/title/tt0169102',
+    rtUrl: 'https://www.rottentomatoes.com/search?search=Lagaan',
+    watchScore: 78,
+    moodTags: ['Feel-Good', 'Emotional', 'Epic']
   },
   {
     id: '7',
@@ -161,7 +240,12 @@ export const movies: Movie[] = [
     genres: ['Action', 'Drama'],
     ottPlatforms: [OTT_PLATFORMS[3], OTT_PLATFORMS[0]],
     isTop10: true,
-    rank: 7
+    rank: 7,
+    imdbId: 'tt2631186',
+    imdbUrl: 'https://www.imdb.com/title/tt2631186',
+    rtUrl: 'https://www.rottentomatoes.com/search?search=Bahubali+The+Beginning',
+    watchScore: 85,
+    moodTags: ['Epic', 'Intense', 'Feel-Good']
   },
   {
     id: '8',
@@ -175,7 +259,12 @@ export const movies: Movie[] = [
     genres: ['Comedy', 'Drama'],
     ottPlatforms: [OTT_PLATFORMS[0], OTT_PLATFORMS[1]],
     isTop10: true,
-    rank: 8
+    rank: 8,
+    imdbId: 'tt1187043',
+    imdbUrl: 'https://www.imdb.com/title/tt1187043',
+    rtUrl: 'https://www.rottentomatoes.com/search?search=3+Idiots',
+    watchScore: 84,
+    moodTags: ['Feel-Good', 'Emotional', 'Easy Watch']
   },
   {
     id: '9',
@@ -189,7 +278,12 @@ export const movies: Movie[] = [
     genres: ['Animation', 'Action', 'Sci-Fi'],
     ottPlatforms: [OTT_PLATFORMS[0]],
     isTop10: true,
-    rank: 9
+    rank: 9,
+    imdbId: 'tt9362722',
+    imdbUrl: 'https://www.imdb.com/title/tt9362722',
+    rtUrl: 'https://www.rottentomatoes.com/search?search=Spider-Man+Across+the+Spider-Verse',
+    watchScore: 91,
+    moodTags: ['Mind-Bender', 'Epic', 'Lighthearted']
   },
   {
     id: '10',
@@ -199,11 +293,16 @@ export const movies: Movie[] = [
     rating: 8.2,
     description: 'Rocky, a young man, seeks power and wealth in order to fulfill a promise to his dying mother. His quest takes him to Mumbai, where he becomes involved with the notorious gold mafia.',
     releaseYear: 2018,
-    region: 'Tollywood', // Actually Kannada, but for simplicity...
+    region: 'Tollywood',
     genres: ['Action', 'Drama'],
     ottPlatforms: [OTT_PLATFORMS[1]],
     isTop10: true,
-    rank: 10
+    rank: 10,
+    imdbId: 'tt7838252',
+    imdbUrl: 'https://www.imdb.com/title/tt7838252',
+    rtUrl: 'https://www.rottentomatoes.com/search?search=KGF+Chapter+1',
+    watchScore: 82,
+    moodTags: ['Intense', 'Dark & Gritty', 'Epic']
   },
   {
     id: '11',
@@ -216,7 +315,12 @@ export const movies: Movie[] = [
     region: 'Bollywood',
     genres: ['Romance', 'Drama'],
     ottPlatforms: [OTT_PLATFORMS[0], OTT_PLATFORMS[3]],
-    isTop10: false
+    isTop10: false,
+    imdbId: 'tt0112870',
+    imdbUrl: 'https://www.imdb.com/title/tt0112870',
+    rtUrl: 'https://www.rottentomatoes.com/search?search=Dilwale+Dulhania+Le+Jayenge',
+    watchScore: 72,
+    moodTags: ['Emotional', 'Feel-Good', 'Lighthearted']
   },
   {
     id: '12',
@@ -229,6 +333,11 @@ export const movies: Movie[] = [
     region: 'Tollywood',
     genres: ['Action', 'Romance'],
     ottPlatforms: [OTT_PLATFORMS[1]],
-    isTop10: false
+    isTop10: false,
+    imdbId: 'tt1320259',
+    imdbUrl: 'https://www.imdb.com/title/tt1320259',
+    rtUrl: 'https://www.rottentomatoes.com/search?search=Magadheera',
+    watchScore: 74,
+    moodTags: ['Epic', 'Emotional', 'Intense']
   }
 ];

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import type { Movie } from '../data/movies';
+import type { Movie, MoodTag } from '../data/movies';
+import { MOOD_EMOJI } from '../data/movies';
 
 interface Props {
   movie: Movie;
@@ -10,6 +11,10 @@ const PLACEHOLDER_SVG = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="
 
 export default function MovieCard({ movie, rank }: Props) {
   const ottPlatforms = movie.ottPlatforms || [];
+  const firstMood = movie.moodTags?.[0];
+  const moodEmoji = firstMood ? MOOD_EMOJI[firstMood as MoodTag] || '' : '';
+  const ws = movie.watchScore;
+  const wsPct = ws ? Math.min(ws, 100) : 0;
 
   return (
     <motion.div
@@ -28,7 +33,7 @@ export default function MovieCard({ movie, rank }: Props) {
         </div>
       )}
       
-          <div suppressHydrationWarning className="aspect-[2/3] overflow-hidden bg-canvas-soft-2 pointer-events-none">
+      <div suppressHydrationWarning className="aspect-[2/3] relative overflow-hidden bg-canvas-soft-2">
         <img 
           src={movie.thumbnail || PLACEHOLDER_SVG}
           alt={movie.title}
@@ -37,6 +42,15 @@ export default function MovieCard({ movie, rank }: Props) {
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_SVG; }}
         />
+        {ws && (
+          <div className="absolute top-3 right-3 z-30 flex flex-col items-center">
+            <svg className="w-12 h-12 -rotate-90 drop-shadow-lg" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-white/20" />
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeDasharray={`${wsPct} ${100 - wsPct}`} strokeDashoffset="0" strokeLinecap="round" className={`${ws >= 85 ? 'text-emerald-400' : ws >= 70 ? 'text-sky-400' : ws >= 55 ? 'text-amber-400' : 'text-gray-400'}`} />
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-white drop-shadow-md">{ws}</span>
+          </div>
+        )}
       </div>
       
       <div suppressHydrationWarning className="p-4 flex flex-col flex-1 relative z-20 pointer-events-none">
@@ -44,15 +58,31 @@ export default function MovieCard({ movie, rank }: Props) {
           <span className="text-[10px] font-mono font-medium uppercase tracking-wider text-mute">
             {movie.region} • {movie.releaseYear}
           </span>
-            <div suppressHydrationWarning className="flex items-center gap-1">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-warning"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            <span className="text-xs font-semibold text-ink">{movie.rating}</span>
+          <div className="flex items-center gap-1">
+            {firstMood && moodEmoji && (
+              <span className="text-[10px] font-bold text-mute bg-canvas-soft-2 rounded-pill px-2 py-0.5 border border-hairline">
+                {moodEmoji} {firstMood}
+              </span>
+            )}
           </div>
         </div>
         
         <h3 className="text-base font-semibold text-ink line-clamp-1 group-hover:text-link transition-colors">
           {movie.title}
         </h3>
+        
+        <div className="mt-2 flex items-center gap-2">
+          {movie.imdbUrl && (
+            <a href={movie.imdbUrl} target="_blank" rel="noopener noreferrer" className="z-30 inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all">
+              IMDB
+            </a>
+          )}
+          {movie.rtUrl && (
+            <a href={movie.rtUrl} target="_blank" rel="noopener noreferrer" className="z-30 inline-flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-900/20 px-2 py-0.5 text-[10px] font-bold text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40 transition-all">
+              RT
+            </a>
+          )}
+        </div>
         
           <div suppressHydrationWarning className="mt-2 flex flex-wrap gap-1 pointer-events-auto">
           {movie.genres.map(genre => (
