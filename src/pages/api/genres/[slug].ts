@@ -1,8 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getMoviesPage } from '../../../services/movieService';
-import { getCachedData, setCachedData } from '../../../services/cache';
 
-const CACHE_TTL = 3600; // 1 hour
 const MAX_LIMIT = 30;
 
 export const prerender = false;
@@ -17,33 +15,19 @@ export const GET: APIRoute = async ({ params, url }) => {
 
     if (!slug) return new Response('Missing genre slug', { status: 400 });
 
-    const cacheKey = `genre:v2:${slug}:p${page}:l${limit}`;
-    const cached = await getCachedData<any>(cacheKey);
-
-    if (cached) {
-      return new Response(JSON.stringify(cached), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=300, s-maxage=3600',
-          'X-Cache': 'HIT'
-        }
-      });
-    }
-
     // Capitalize first letter as our genres are stored that way
     const genre = slug.charAt(0).toUpperCase() + slug.slice(1);
 
+    // The duplicate cache layer that used to sit here doubled the command cost of
+    // every request; getMoviesPage already caches, and the middleware edge cache
+    // handles the response itself.
     const data = await getMoviesPage({ page, limit, genre });
-
-    await setCachedData(cacheKey, data, CACHE_TTL);
 
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=300, s-maxage=3600',
-        'X-Cache': 'MISS'
+        'Cache-Control': 'public, max-age=300, s-maxage=43200, stale-while-revalidate=86400',
       }
     });
   } catch (error) {

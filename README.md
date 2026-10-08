@@ -131,6 +131,9 @@ The Astro site uses the `@astrojs/cloudflare` adapter to output an SSR-ready bui
 # Build the Astro site
 npm run build
 
+# Only to Deploy the Astro site
+npx wrangler deploy
+
 # Deploy the website Worker (requires root wrangler.toml with name "movie-sync-worker")
 npx wrangler deploy --config wrangler.toml --name movie-sync-worker
 ```

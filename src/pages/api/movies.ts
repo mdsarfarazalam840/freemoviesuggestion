@@ -1,8 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getMoviesPage } from '../../services/movieService';
-import { getCachedData, setCachedData } from '../../services/cache';
 
-const CACHE_TTL = 3600; // 1 hour
 const MAX_LIMIT = 30;
 
 export const prerender = false;
@@ -18,30 +16,16 @@ export const GET: APIRoute = async ({ url }) => {
     const ott = url.searchParams.get('ott')?.trim() || null;
     const mood = url.searchParams.get('mood')?.trim() || null;
 
-    const cacheKey = `movies:list:v3:p${page}:l${limit}:r${region?.toLowerCase() || 'any'}:g${genre?.toLowerCase() || 'any'}:o${ott?.toLowerCase() || 'any'}:m${mood?.toLowerCase() || 'any'}`;
-    
-    const cached = await getCachedData<any>(cacheKey);
-    if (cached) {
-      return new Response(JSON.stringify(cached), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400',
-          'X-Cache': 'HIT'
-        }
-      });
-    }
-
+    // This route used to keep its own cache layer on top of the one inside
+    // getMoviesPage, doubling the command cost of every request. getMoviesPage owns
+    // caching now; the middleware edge cache handles the response itself.
     const data = await getMoviesPage({ page, limit, region, genre, ott, mood });
-    
-    await setCachedData(cacheKey, data, CACHE_TTL);
-    
+
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400',
-        'X-Cache': 'MISS'
+        'Cache-Control': 'public, max-age=300, s-maxage=43200, stale-while-revalidate=86400',
       }
     });
   } catch (error) {

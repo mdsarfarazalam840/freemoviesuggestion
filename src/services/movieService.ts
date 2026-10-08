@@ -8,6 +8,34 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 24;
 const MAX_LIMIT = 30;
 
+// TTLs track the once-daily sync rather than an arbitrary hour, so each key is
+// refilled once per cache-day instead of 24 times.
+const CATALOG_TTL = 90_000; // 25h — just past the cache-day roll
+const SEARCH_TTL = 21_600; // 6h
+
+// Pages past this are never written to the metered cache tier. Crawlers walk
+// pagination deep into the long tail, and without a bound every `?page=N` mints a key.
+const MAX_REMOTE_CACHED_PAGE = 3;
+
+const CACHE_VERSION = 'v10';
+
+/**
+ * Cache keys embed a day stamp, so a finished sync invalidates everything without a
+ * KEYS scan or a mass DEL: fresh content lands under a new prefix and the previous
+ * day's keys expire on their own.
+ *
+ * Rolls at 02:00 UTC, after the 00:00 UTC sync cron (60min timeout) has finished.
+ * Deriving it from the clock costs nothing to coordinate — there is no key to read,
+ * and every isolate and colo agrees without being told.
+ */
+function cacheDay(): string {
+  return new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function cacheKey(...parts: string[]): string {
+  return `mv:${CACHE_VERSION}:${cacheDay()}:${parts.join(':')}`;
+}
+
 type MovieRow = Partial<Movie> & {
   tmdb_id?: number;
   poster_path?: string;
@@ -34,6 +62,8 @@ export type MovieQueryOptions = {
   region?: string | null;
   topOnly?: boolean;
   mood?: string | null;
+  /** Keep results out of the metered cache tier (unbounded key spaces). */
+  skipRemote?: boolean;
 };
 
 export type MoviePage = {
@@ -209,7 +239,7 @@ function movieCacheKey(prefix: string, options: MovieQueryOptions = {}) {
     options.mood ? `mood:${options.mood.toLowerCase()}` : null,
   ].filter(Boolean);
 
-  return `remote_movies:v9:${parts.join(':')}`;
+  return cacheKey(...(parts as string[]));
 }
 
 function matchesFilter(value: string | undefined, filter: string): boolean {
@@ -330,8 +360,13 @@ async function fetchMoviePage(options: MovieQueryOptions = {}): Promise<FetchMov
 }
 
 export async function getMoviesPage(options: MovieQueryOptions = {}): Promise<MoviePage> {
-  const cacheKey = movieCacheKey('page', options);
-  const cachedData = await getCachedData<MoviePage>(cacheKey);
+  const key = movieCacheKey('page', options);
+  // Only the first few pages are hot enough to be worth metered quota; the deep tail
+  // stays on the free memory/edge tiers and falls through to Supabase. Reads and
+  // writes must agree, or a never-written key costs a guaranteed-miss command.
+  const skipRemote =
+    Boolean(options.skipRemote) || normalizePage(options.page) > MAX_REMOTE_CACHED_PAGE;
+  const cachedData = await getCachedData<MoviePage>(key, { skipRemote });
 
   if (cachedData && Array.isArray(cachedData.movies) && cachedData.movies.length > 0) {
     console.log(`[movies] ✓ Cache HIT for page (${cachedData.movies.length} movies from Upstash)`);
@@ -355,17 +390,20 @@ export async function getMoviesPage(options: MovieQueryOptions = {}): Promise<Mo
   if (pageResult.movies.length > 0 && hasEmptyThumbnails) {
     console.warn(`[movies] ${pageResult.movies.filter((m) => !m.thumbnail).length}/${pageResult.movies.length} movies have empty thumbnails — skipping cache`);
   } else if (pageResult.movies.length > 0) {
-    const ttl = isFallback ? 900 : 3600; // shorter TTL for fallback data
-    await setCachedData(cacheKey, pageResult, ttl);
-    console.log(`[movies] Cached ${pageResult.movies.length} movies in Upstash (fallback=${!!isFallback})`);
+    const ttl = isFallback ? 900 : CATALOG_TTL; // shorter TTL for fallback data
+    await setCachedData(key, pageResult, ttl, { skipRemote });
+    console.log(`[movies] Cached ${pageResult.movies.length} movies (fallback=${!!isFallback})`);
   }
 
   return pageResult;
 }
 
 export async function getMovieBySlug(slug: string): Promise<Movie | null> {
-  const cacheKey = `remote_movies:v5:slug:${slug}`;
-  const cachedData = await getCachedData<MovieRow>(cacheKey);
+  // Individual movies are the unbounded, crawler-walked key space — the single
+  // biggest source of metered commands. Memory + edge + Supabase cover it for free;
+  // the lookup is an indexed single-row query.
+  const key = cacheKey('slug', slug);
+  const cachedData = await getCachedData<MovieRow>(key, { skipRemote: true });
 
   if (cachedData) return normalizeMovie(cachedData);
 
@@ -390,7 +428,7 @@ export async function getMovieBySlug(slug: string): Promise<Movie | null> {
 
   if (data) {
     const movie = normalizeMovie(data);
-    await setCachedData(cacheKey, movie, 86400);
+    await setCachedData(key, movie, CATALOG_TTL, { skipRemote: true });
     return movie;
   }
 
@@ -409,7 +447,7 @@ export async function getMovieBySlug(slug: string): Promise<Movie | null> {
 
     if (!prefixError && prefixData) {
       const movie = normalizeMovie(prefixData);
-      await setCachedData(cacheKey, movie, 86400);
+      await setCachedData(key, movie, CATALOG_TTL, { skipRemote: true });
       return movie;
     }
   } else {
@@ -427,8 +465,8 @@ export async function getMovieBySlug(slug: string): Promise<Movie | null> {
 
 export async function getMovieById(id: number | string): Promise<Movie | null> {
   const idNum = Number(id);
-  const cacheKey = `remote_movies:v5:id:${id}`;
-  const cachedData = await getCachedData<MovieRow>(cacheKey);
+  const key = cacheKey('id', String(id));
+  const cachedData = await getCachedData<MovieRow>(key, { skipRemote: true });
 
   if (cachedData) return normalizeMovie(cachedData);
 
@@ -457,7 +495,7 @@ export async function getMovieById(id: number | string): Promise<Movie | null> {
   if (!data) return null;
 
   const movie = normalizeMovie(data);
-  await setCachedData(cacheKey, movie, 86400);
+  await setCachedData(key, movie, CATALOG_TTL, { skipRemote: true });
 
   return movie;
 }
@@ -469,11 +507,11 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
-  const cacheKey = movieCacheKey(`search:${normalizedSearchTerm}`, options);
-  const cachedData = await getCachedData<MoviePage>(cacheKey);
+  const key = movieCacheKey(`search:${normalizedSearchTerm}`, options);
+  const cachedData = await getCachedData<MoviePage>(key, { skipRemote: options.skipRemote });
 
   if (cachedData && Array.isArray(cachedData.movies)) {
-    console.log(`[search] ✓ Cache HIT for "${normalizedSearchTerm}" (${cachedData.movies.length} results from Upstash)`);
+    console.log(`[search] ✓ Cache HIT for "${normalizedSearchTerm}" (${cachedData.movies.length} results)`);
     return {
       ...cachedData,
       movies: normalizeMovies(cachedData.movies),
@@ -547,8 +585,8 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
     };
 
     // Cache even empty/local results so we don't hit Supabase again for the same query
-    await setCachedData(cacheKey, fallbackResult, 900); // 15 min TTL for fallback
-    console.log(`[search] Cached ${safeCount} local results for "${normalizedSearchTerm}" in Upstash`);
+    await setCachedData(key, fallbackResult, 900, { skipRemote: options.skipRemote }); // 15 min TTL for fallback
+    console.log(`[search] Cached ${safeCount} local results for "${normalizedSearchTerm}"`);
     return fallbackResult;
   }
 
@@ -565,16 +603,17 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
   if (hasEmptyThumbnails) {
     console.warn(`[search] ${result.movies.filter((m) => !m.thumbnail).length}/${result.movies.length} movies have empty thumbnails for "${normalizedSearchTerm}" — skipping cache`);
   } else {
-    await setCachedData(cacheKey, result, 3600);
-    console.log(`[search] Cached ${result.movies.length} Supabase results for "${normalizedSearchTerm}" in Upstash`);
+    await setCachedData(key, result, SEARCH_TTL, { skipRemote: options.skipRemote });
+    console.log(`[search] Cached ${result.movies.length} Supabase results for "${normalizedSearchTerm}"`);
   }
 
   return result;
 }
 
 export async function getRecommendations(movie: Movie, limit = 6): Promise<Movie[]> {
-  const cacheKey = `remote_movies:v6:recommendations:${movie.id}`;
-  const cachedData = await getCachedData<MovieRow[]>(cacheKey);
+  // Keyed per movie, so it inherits the unbounded cardinality of the catalog.
+  const key = cacheKey('recommendations', String(movie.id));
+  const cachedData = await getCachedData<MovieRow[]>(key, { skipRemote: true });
 
   if (Array.isArray(cachedData)) return normalizeMovies(cachedData);
 
@@ -624,7 +663,7 @@ export async function getRecommendations(movie: Movie, limit = 6): Promise<Movie
   }
 
   const result = normalizeMovies(results);
-  await setCachedData(cacheKey, result, 86400);
+  await setCachedData(key, result, CATALOG_TTL, { skipRemote: true });
 
   return result;
 }
@@ -633,8 +672,9 @@ export async function getRegionFilteredRecommendations(
   movie: Movie,
   limit = 8,
 ): Promise<Movie[]> {
-  const cacheKey = `remote_movies:v6:region_recs:${movie.id}`;
-  const cachedData = await getCachedData<MovieRow[]>(cacheKey);
+  // Keyed per movie, so it inherits the unbounded cardinality of the catalog.
+  const key = cacheKey('region_recs', String(movie.id));
+  const cachedData = await getCachedData<MovieRow[]>(key, { skipRemote: true });
 
   if (Array.isArray(cachedData)) return normalizeMovies(cachedData);
 
@@ -702,15 +742,15 @@ export async function getRegionFilteredRecommendations(
   }
 
   const result = normalizeMovies(results);
-  await setCachedData(cacheKey, result, 86400);
+  await setCachedData(key, result, CATALOG_TTL, { skipRemote: true });
 
   return result;
 }
 
 export async function getTrendingMovies(limit = DEFAULT_LIMIT): Promise<Movie[]> {
-  const cacheKey = movieCacheKey('trending', { limit, topOnly: true });
-  
-  const cachedData = await getCachedData<MovieRow[]>(cacheKey);
+  const key = movieCacheKey('trending', { limit, topOnly: true });
+
+  const cachedData = await getCachedData<MovieRow[]>(key);
   if (Array.isArray(cachedData)) {
     return normalizeMovies(cachedData);
   }
@@ -719,19 +759,14 @@ export async function getTrendingMovies(limit = DEFAULT_LIMIT): Promise<Movie[]>
   const result = page.movies;
 
   if (!page.isFallback) {
-    await setCachedData(cacheKey, result);
-  }
-  
-  return result;
-}
-export async function getPopularMovies(limit = 10): Promise<Movie[]> {
-  const cacheKey = movieCacheKey('popular', { limit });
-  
-  const cachedData = await getCachedData<MovieRow[]>(cacheKey);
-  if (Array.isArray(cachedData)) {
-    return normalizeMovies(cachedData);
+    await setCachedData(key, result, CATALOG_TTL);
   }
 
+  return result;
+}
+
+/** Uncached core, so the homepage bundle can reuse it without a second cache read. */
+async function fetchPopularMovies(limit: number): Promise<Movie[]> {
   if (!hasSupabaseConfig()) {
     return localMovies
       .filter((m) => m.isTop10)
@@ -750,22 +785,84 @@ export async function getPopularMovies(limit = 10): Promise<Movie[]> {
 
   if (error) {
     console.warn('Supabase popular movie fetch failed:', error);
-    const fallbackMovies = localMovies
+    return localMovies
       .filter((m) => m.isTop10)
       .sort((a, b) => (a.rank || 99) - (b.rank || 99))
       .slice(0, limit);
-    return fallbackMovies;
   }
 
-  const result = normalizeMovies(data);
-  await setCachedData(cacheKey, result);
-  
+  return normalizeMovies(data);
+}
+
+export async function getPopularMovies(limit = 10): Promise<Movie[]> {
+  const key = movieCacheKey('popular', { limit });
+
+  const cachedData = await getCachedData<MovieRow[]>(key);
+  if (Array.isArray(cachedData)) {
+    return normalizeMovies(cachedData);
+  }
+
+  const result = await fetchPopularMovies(limit);
+  await setCachedData(key, result, CATALOG_TTL);
+
   return result;
 }
 
+export type HomePageData = {
+  top10: Movie[];
+  bollywood: Movie[];
+  hollywood: Movie[];
+  tollywood: Movie[];
+};
+
+/**
+ * The homepage used to make four separate cache reads — four metered commands on the
+ * busiest route on the site. One bundled key makes it one.
+ *
+ * A single bundled value is used deliberately rather than a multi-key read: Upstash
+ * does not document whether MGET bills as one command or one per key, and a plain GET
+ * of one value is unambiguous either way.
+ */
+export async function getHomePageData(): Promise<HomePageData> {
+  const key = cacheKey('home');
+  const cachedData = await getCachedData<HomePageData>(key);
+
+  if (cachedData && Array.isArray(cachedData.top10) && cachedData.top10.length > 0) {
+    return {
+      top10: normalizeMovies(cachedData.top10 as MovieRow[]),
+      bollywood: normalizeMovies(cachedData.bollywood as MovieRow[]),
+      hollywood: normalizeMovies(cachedData.hollywood as MovieRow[]),
+      tollywood: normalizeMovies(cachedData.tollywood as MovieRow[]),
+    };
+  }
+
+  const [top10, bollywood, hollywood, tollywood] = await Promise.all([
+    fetchPopularMovies(10),
+    fetchMoviePage({ region: 'Bollywood', limit: 4 }),
+    fetchMoviePage({ region: 'Hollywood', limit: 4 }),
+    fetchMoviePage({ region: 'Tollywood', limit: 4 }),
+  ]);
+
+  const data: HomePageData = {
+    top10,
+    bollywood: bollywood.movies,
+    hollywood: hollywood.movies,
+    tollywood: tollywood.movies,
+  };
+
+  const isFallback = bollywood.isFallback || hollywood.isFallback || tollywood.isFallback;
+  if (data.top10.length > 0) {
+    await setCachedData(key, data, isFallback ? 900 : CATALOG_TTL);
+  }
+
+  return data;
+}
+
 export async function getAllMovieSlugs(): Promise<string[]> {
-  const cacheKey = 'remote_movies:v2:all_slugs';
-  const cachedData = await getCachedData<string[]>(cacheKey);
+  // A ~400KB value read by exactly one URL. Keeping it off the metered tier also
+  // keeps it off the Upstash bandwidth quota; a per-colo edge cache suits it better.
+  const key = cacheKey('all_slugs');
+  const cachedData = await getCachedData<string[]>(key, { skipRemote: true });
 
   if (cachedData) return cachedData;
 
@@ -782,7 +879,7 @@ export async function getAllMovieSlugs(): Promise<string[]> {
   }
 
   const slugs = data.map(row => row.slug);
-  await setCachedData(cacheKey, slugs, 3600); // 1 hour cache
+  await setCachedData(key, slugs, CATALOG_TTL, { skipRemote: true });
 
   return slugs;
 }
