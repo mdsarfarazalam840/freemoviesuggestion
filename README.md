@@ -64,7 +64,11 @@ graph LR
     CP --> |Cache Hit| U
 ```
 
-📐 **Interactive diagram:** open [`architecture-interactive.html`](./architecture-interactive.html) for an explorable view of the system with guided *Serve path*, *Sync path*, and *Cache tier* views (zoom, pan, light/dark). A standalone static render is also available at [`architecture.html`](./architecture.html).
+📐 **Interactive diagram — opens straight from this README:**
+
+- 🚀 **Live (GitHub Pages):** [**Open the interactive architecture diagram**](https://mdsarfarazalam840.github.io/freemoviesuggestion/architecture-interactive.html) — an explorable view with guided *Serve path*, *Sync path*, and *Cache tier* views (zoom, pan, light/dark). Static render: [`architecture.html`](https://mdsarfarazalam840.github.io/freemoviesuggestion/architecture.html).
+- ⚡ **Instant preview (no deploy needed):** [open via htmlpreview](https://htmlpreview.github.io/?https://raw.githubusercontent.com/mdsarfarazalam840/freemoviesuggestion/master/architecture-interactive.html) — renders the file directly from the repository.
+- 💾 **Local:** [`architecture-interactive.html`](./architecture-interactive.html) — clone the repo and open it in your browser.
 
 ### 🗺️ Extended codebase map
 
