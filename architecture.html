@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreeMovieSuggestion — System Architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif:ital@0;1&family=Noto+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@400&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #fafafa;   /* canvas-soft */
+      --color-ink:     #171717;   /* ink */
+      --color-muted:   #4d4d4d;   /* body */
+      --color-accent:  #7928ca;   /* violet */
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', 'Noto Serif', 'Noto Serif KR', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1200px; width: 100%; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+
+    svg { width: 100%; min-width: 960px; display: block; }
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · Diagram Design</p>
+    <h1>FreeMovieSuggestion — System Architecture</h1>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="architecture-title architecture-desc">
+        <title id="architecture-title">FreeMovieSuggestion system architecture</title>
+        <desc id="architecture-desc">Architecture diagram of FreeMovieSuggestion: visitors reach the Astro SSR site running on Cloudflare Workers, which serves movie data from a tiered cache backed by Upstash Redis and Workers KV with Supabase as the source of truth, while a daily sync worker pulls from TMDB and checkpoints progress in Redis.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4d4d4d"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#7928ca"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0070f3"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#fafafa"/>
+
+        <!-- Zones -->
+        <rect x="192" y="144" width="400" height="344" rx="8" fill="rgba(23,23,23,0.02)" stroke="rgba(23,23,23,0.10)" stroke-width="0.8"/>
+        <rect x="196" y="148" width="104" height="12" rx="2" fill="#fafafa"/>
+        <text x="248" y="157" fill="#888888" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">CLOUDFLARE WORKERS</text>
+
+        <rect x="656" y="176" width="264" height="312" rx="8" fill="rgba(23,23,23,0.02)" stroke="rgba(23,23,23,0.10)" stroke-width="0.8"/>
+        <rect x="660" y="180" width="80" height="12" rx="2" fill="#fafafa"/>
+        <text x="700" y="189" fill="#888888" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">DATA SERVICES</text>
+
+        <!-- Arrows (drawn before boxes) -->
+        <!-- 1. User -> Astro: HTTP request (link) -->
+        <line x1="160" y1="324" x2="224" y2="324" stroke="#0070f3" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <!-- 2. Astro -> Upstash: tier-2 cache read/write -->
+        <path d="M440,324 H600 Q608,324 608,316 V264 Q608,256 616,256 H688" fill="none" stroke="#4d4d4d" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <!-- 3. Astro -> KV: standby dual-write (dashed) -->
+        <path d="M332,384 V416" fill="none" stroke="#4d4d4d" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+        <!-- 4. Astro -> Supabase: query on cache miss -->
+        <path d="M440,356 H624 Q632,356 632,364 V412 Q632,420 640,420 H688" fill="none" stroke="#4d4d4d" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <!-- 5. TMDB -> sync worker: movie data (link) -->
+        <line x1="484" y1="96" x2="484" y2="176" stroke="#0070f3" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <!-- 6. Sync worker -> Upstash: sync_progress checkpoint -->
+        <path d="M568,224 H576 Q584,224 584,232 H688" fill="none" stroke="#4d4d4d" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <!-- 7. Sync worker -> Supabase: upsert -->
+        <path d="M568,200 H896 Q904,200 904,208 V412 Q904,420 896,420 H888" fill="none" stroke="#4d4d4d" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+        <!-- Arrow labels (opaque masks, 6-10px gap) -->
+        <rect x="168" y="304" width="48" height="12" rx="2" fill="#fafafa"/>
+        <text x="192" y="313" fill="#888888" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">HTTP REQ</text>
+
+        <rect x="616" y="284" width="60" height="12" rx="2" fill="#fafafa"/>
+        <text x="646" y="293" fill="#888888" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">CACHE R/W</text>
+
+        <rect x="282" y="394" width="44" height="12" rx="2" fill="#fafafa"/>
+        <text x="304" y="403" fill="#888888" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">STANDBY</text>
+
+        <rect x="578" y="382" width="44" height="12" rx="2" fill="#fafafa"/>
+        <text x="600" y="391" fill="#888888" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ON MISS</text>
+
+        <rect x="492" y="130" width="60" height="12" rx="2" fill="#fafafa"/>
+        <text x="522" y="139" fill="#888888" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">MOVIE DATA</text>
+
+        <rect x="600" y="212" width="72" height="12" rx="2" fill="#fafafa"/>
+        <text x="636" y="221" fill="#888888" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SYNC_PROGRESS</text>
+
+        <rect x="604" y="180" width="40" height="12" rx="2" fill="#fafafa"/>
+        <text x="624" y="189" fill="#888888" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">UPSERT</text>
+
+        <!-- Nodes -->
+        <!-- User (input) -->
+        <rect x="40" y="296" width="120" height="56" rx="6" fill="#fafafa"/>
+        <rect x="40" y="296" width="120" height="56" rx="6" fill="rgba(77,77,77,0.10)" stroke="#888888" stroke-width="1"/>
+        <rect x="48" y="302" width="40" height="12" rx="2" fill="transparent" stroke="rgba(136,136,136,0.40)" stroke-width="0.8"/>
+        <text x="68" y="311" fill="rgba(136,136,136,0.80)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CLIENT</text>
+        <text x="100" y="326" fill="#171717" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">User</text>
+
+        <!-- Astro SSR Site (focal) -->
+        <rect x="224" y="296" width="216" height="88" rx="6" fill="#fafafa"/>
+        <rect x="224" y="296" width="216" height="88" rx="6" fill="rgba(121,40,202,0.08)" stroke="#7928ca" stroke-width="1.2"/>
+        <rect x="232" y="302" width="40" height="12" rx="2" fill="transparent" stroke="rgba(121,40,202,0.40)" stroke-width="0.8"/>
+        <text x="252" y="311" fill="rgba(121,40,202,0.80)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">WORKER</text>
+        <text x="332" y="342" fill="#171717" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Astro SSR Site</text>
+        <text x="332" y="358" fill="#888888" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">freemoviesuggestion · edge cache</text>
+
+        <!-- movie-sync-worker (backend) -->
+        <rect x="400" y="176" width="168" height="64" rx="6" fill="#fafafa"/>
+        <rect x="400" y="176" width="168" height="64" rx="6" fill="#ffffff" stroke="#171717" stroke-width="1"/>
+        <rect x="408" y="182" width="40" height="12" rx="2" fill="transparent" stroke="rgba(23,23,23,0.40)" stroke-width="0.8"/>
+        <text x="428" y="191" fill="rgba(23,23,23,0.80)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">WORKER</text>
+        <text x="484" y="210" fill="#171717" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">movie-sync-worker</text>
+        <text x="484" y="226" fill="#888888" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">cron 0 0 * * * UTC</text>
+
+        <!-- Workers KV (store) -->
+        <rect x="224" y="416" width="168" height="56" rx="6" fill="#fafafa"/>
+        <rect x="224" y="416" width="168" height="56" rx="6" fill="rgba(23,23,23,0.05)" stroke="#4d4d4d" stroke-width="1"/>
+        <rect x="232" y="422" width="36" height="12" rx="2" fill="transparent" stroke="rgba(77,77,77,0.40)" stroke-width="0.8"/>
+        <text x="250" y="431" fill="rgba(77,77,77,0.80)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STORE</text>
+        <text x="308" y="446" fill="#171717" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Workers KV</text>
+        <text x="308" y="462" fill="#888888" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">CACHE namespace · standby</text>
+
+        <!-- TMDB API (external) -->
+        <rect x="400" y="40" width="168" height="56" rx="6" fill="#fafafa"/>
+        <rect x="400" y="40" width="168" height="56" rx="6" fill="rgba(23,23,23,0.03)" stroke="rgba(23,23,23,0.30)" stroke-width="1"/>
+        <rect x="408" y="46" width="48" height="12" rx="2" fill="transparent" stroke="rgba(23,23,23,0.40)" stroke-width="0.8"/>
+        <text x="432" y="55" fill="rgba(23,23,23,0.70)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">EXTERNAL</text>
+        <text x="484" y="70" fill="#171717" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">TMDB API</text>
+
+        <!-- Upstash Redis (store) -->
+        <rect x="688" y="208" width="200" height="72" rx="6" fill="#fafafa"/>
+        <rect x="688" y="208" width="200" height="72" rx="6" fill="rgba(23,23,23,0.05)" stroke="#4d4d4d" stroke-width="1"/>
+        <rect x="696" y="214" width="36" height="12" rx="2" fill="transparent" stroke="rgba(77,77,77,0.40)" stroke-width="0.8"/>
+        <text x="714" y="223" fill="rgba(77,77,77,0.80)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STORE</text>
+        <text x="788" y="246" fill="#171717" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Upstash Redis</text>
+        <text x="788" y="262" fill="#888888" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">tier-2 primary · sync_progress</text>
+
+        <!-- Supabase (focal) -->
+        <rect x="688" y="376" width="200" height="88" rx="6" fill="#fafafa"/>
+        <rect x="688" y="376" width="200" height="88" rx="6" fill="rgba(121,40,202,0.08)" stroke="#7928ca" stroke-width="1.2"/>
+        <rect x="696" y="382" width="36" height="12" rx="2" fill="transparent" stroke="rgba(121,40,202,0.40)" stroke-width="0.8"/>
+        <text x="714" y="391" fill="rgba(121,40,202,0.80)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STORE</text>
+        <text x="788" y="422" fill="#171717" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Supabase Postgres</text>
+
+        <!-- Annotation callout -->
+        <text x="40" y="80" fill="#171717" font-size="14" font-style="italic" font-family="'Instrument Serif', serif">GitHub Actions runs the same cron — shared checkpoint</text>
+        <path d="M300,88 Q330,150 400,196" fill="none" stroke="rgba(23,23,23,0.40)" stroke-width="1" stroke-dasharray="4,3"/>
+        <circle cx="400" cy="196" r="2" fill="#171717"/>
+
+        <!-- Legend -->
+        <line x1="40" y1="540" x2="920" y2="540" stroke="rgba(23,23,23,0.10)" stroke-width="0.8"/>
+        <text x="40" y="556" fill="#4d4d4d" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+
+        <line x1="130" y1="552" x2="158" y2="552" stroke="#4d4d4d" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <text x="166" y="555" fill="#4d4d4d" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">DATA FLOW</text>
+
+        <line x1="280" y1="552" x2="308" y2="552" stroke="#4d4d4d" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+        <text x="316" y="555" fill="#4d4d4d" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">STANDBY</text>
+
+        <line x1="410" y1="552" x2="438" y2="552" stroke="#0070f3" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <text x="446" y="555" fill="#4d4d4d" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">EXTERNAL API</text>
+
+        <rect x="570" y="546" width="16" height="12" rx="2" fill="rgba(121,40,202,0.08)" stroke="#7928ca" stroke-width="1.2"/>
+        <text x="594" y="555" fill="#4d4d4d" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">FOCAL NODE</text>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>
