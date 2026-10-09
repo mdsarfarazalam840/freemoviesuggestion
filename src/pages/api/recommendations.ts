@@ -1,8 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getMovieById, getRecommendations } from '../../services/movieService';
-import { getCachedData, setCachedData } from '../../services/cache';
 
-const CACHE_TTL = 86400; // 24 hours
 const MAX_LIMIT = 12;
 
 export const prerender = false;
@@ -17,20 +15,9 @@ export const GET: APIRoute = async ({ url }) => {
       return new Response(JSON.stringify({ error: 'Missing movieId' }), { status: 400 });
     }
 
-    const cacheKey = `recommendations:${movieId}:l${limit}`;
-    const cached = await getCachedData<any>(cacheKey);
-
-    if (cached) {
-      return new Response(JSON.stringify(cached), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=3600, s-maxage=86400',
-          'X-Cache': 'HIT'
-        }
-      });
-    }
-
+    // The duplicate cache layer that used to sit here doubled the command cost of
+    // every request; getMovieById/getRecommendations already cache, and the
+    // middleware edge cache handles the response itself.
     const movie = await getMovieById(movieId);
     if (!movie) {
       return new Response(JSON.stringify({ error: 'Movie not found' }), { status: 404 });
@@ -38,14 +25,11 @@ export const GET: APIRoute = async ({ url }) => {
 
     const recommendations = await getRecommendations(movie, limit);
 
-    await setCachedData(cacheKey, recommendations, CACHE_TTL);
-
     return new Response(JSON.stringify(recommendations), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=3600, s-maxage=86400',
-        'X-Cache': 'MISS'
       }
     });
   } catch (error) {

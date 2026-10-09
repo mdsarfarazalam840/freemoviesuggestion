@@ -352,7 +352,6 @@ export async function syncMovies(targetCount = 1000) {
   }
 
   await saveProgress(sourceIndex, sourcePage, totalSynced);
-  await clearRedisCache();
 
   if (totalSynced >= targetCount) {
     console.log(`Sync target of ${targetCount} movies reached.`);
@@ -363,15 +362,10 @@ export async function syncMovies(targetCount = 1000) {
   return stats;
 }
 
-async function clearRedisCache() {
-  try {
-    const knownKeys = ['sync_progress', 'trending_movies', 'all_movies', 'bollywood_movies', 'tollywood_movies'];
-    const matched = await redis.keys('remote_movies:*');
-    await redis.del(...knownKeys, ...matched);
-  } catch (err) {
-    console.warn('Failed to clear some Redis caches:', err);
-  }
-}
+// Cache invalidation is handled by the day-stamped key prefix in movieService
+// (`cacheDay()`, rolls at 02:00 UTC). The previous KEYS-scan-plus-mass-DEL here cost
+// commands of its own and then forced every page to miss for the following hour,
+// which roughly doubled usage right after each sync.
 
 export async function syncTrendingMovies() {
   const [trendingData, bollywoodData, tollywoodData, kollywoodData, mollywoodData, sandalwoodData] = await Promise.all([

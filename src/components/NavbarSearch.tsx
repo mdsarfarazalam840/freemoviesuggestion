@@ -70,7 +70,10 @@ const NavbarSearch: React.FC = () => {
     abortRef.current = controller;
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&limit=6`, {
+      // `suggest=1` marks this as search-as-you-type so the API keeps it off the
+      // metered cache tier — every keystroke would otherwise cost a command and
+      // mint a cache key, including for every typo along the way.
+      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&limit=6&suggest=1`, {
         signal: controller.signal,
       });
       if (!res.ok) throw new Error(`Search failed with ${res.status}`);

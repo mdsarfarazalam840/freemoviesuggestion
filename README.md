@@ -64,6 +64,97 @@ graph LR
     CP --> |Cache Hit| U
 ```
 
+📐 **Interactive diagram:** open [`architecture-interactive.html`](./architecture-interactive.html) for an explorable view of the system with guided *Serve path*, *Sync path*, and *Cache tier* views (zoom, pan, light/dark). A standalone static render is also available at [`architecture.html`](./architecture.html).
+
+### 🗺️ Extended codebase map
+
+A complete mermaid view of every moving part in the repository — website worker, sync worker, shared services, scripts, and CI:
+
+```mermaid
+graph TD
+    U(["User · Browser"])
+
+    subgraph SITE["Website Worker · wrangler.json · @astrojs/cloudflare"]
+        MW["src/middleware.ts<br/>CSP · edge caching · cache headers · env wiring"]
+        PP["Astro pages · src/pages<br/>index · movies · movie detail · search<br/>genre · region · ott · static pages · sitemap.xml"]
+        ISL["UI components · src/components · src/layouts<br/>React islands: NavbarSearch · MovieCard · Marquee<br/>Astro: Hero · Navbar · Footer · Pagination<br/>framer-motion · gsap · Tailwind v4"]
+        API["API routes · src/pages/api<br/>movies · search · recommendations · movie id<br/>genres slug · health cache · health thumbnails"]
+        MS["services/movieService.ts<br/>catalog pages · search · recommendations"]
+        CACHE["services/cache.ts<br/>tier 0 isolate memory · tier 1 caches.default · tier 2 metered"]
+        STORE["services/cacheStore.ts<br/>reads primary with failover · writes both backends"]
+        subgraph LIB["Client wrappers · src/lib + src/data"]
+            SUPC["lib/supabase.ts · supabase-js"]
+            REDC["lib/redis.ts · @upstash/redis"]
+            ENVC["lib/env.ts · secrets resolution"]
+        end
+        FALL["data/movies.ts<br/>fallback catalog · OTT platforms · mood tags"]
+    end
+
+    subgraph WORKER["Sync Worker · workers/wrangler.toml · cron 0 0 * * * UTC"]
+        WI["workers/index.ts<br/>scheduled handler · wireEnv"]
+        SYNC["services/sync.ts<br/>syncMovies · syncTrendingMovies · upserts"]
+        TMDBF["services/tmdb.ts<br/>30 req/s rate limiter · retry · timeout"]
+        ENR["services/enrichment.ts<br/>watchScore · moodTags"]
+        WK["services/wikipedia.ts<br/>Rotten Tomatoes scores · certification"]
+    end
+
+    subgraph CICD["Scripts & CI · scripts + .github/workflows"]
+        SYNCY["sync.yml<br/>cron 0 0 * * * UTC · manual dispatch"]
+        RUNS["scripts/run-sync.ts<br/>npm run sync · trending → bulk → enrich"]
+        RELY["release.yml<br/>astro check · npm run build · GitHub Release"]
+        BUILD["wrangler deploy<br/>site: wrangler.json · assets dist/client · KV SESSION + CACHE<br/>worker: workers/wrangler.toml"]
+        DOCK["scripts/docker-publish.ps1 · optional image publish"]
+    end
+
+    subgraph EXT["External services & edge"]
+        TMDB["TMDB API · api.themoviedb.org"]
+        WIKI["Wikipedia API · enrichment"]
+        SB[("Supabase Postgres<br/>movies table · full-text search")]
+        UP[("Upstash Redis<br/>500K cmds/month · sync_progress")]
+        KV[("Workers KV<br/>CACHE + SESSION namespaces")]
+        EDGE["Cloudflare caches.default<br/>tier 1 edge cache · 12h s-maxage"]
+        GHA["GitHub Actions"]
+    end
+
+    U -->|"HTTP request"| MW
+    MW --> PP
+    MW --> API
+    PP -->|"renders"| ISL
+    PP --> MS
+    API --> MS
+    ISL -->|"suggest · recommendations · thumbnails"| API
+    MS --> CACHE
+    MS -->|"cache miss"| SB
+    MS -->|"no Supabase config"| FALL
+    MS --> SUPC
+    CACHE -->|"tier 1"| EDGE
+    CACHE -->|"tier 2"| STORE
+    STORE -->|"primary reads"| UP
+    STORE -->|"standby dual-write"| KV
+    SUPC -.-> SB
+    REDC -.-> UP
+
+    WI --> SYNC
+    WI --> ENR
+    SYNC --> TMDBF
+    TMDBF --> TMDB
+    SYNC -->|"upsert movies"| SB
+    SYNC -->|"sync_progress checkpoint"| UP
+    SYNC --> ENR
+    ENR --> WK
+    WK --> WIKI
+    ENR -->|"scores + mood tags"| SB
+
+    GHA --> SYNCY
+    GHA --> RELY
+    SYNCY -->|"npx tsx"| RUNS
+    RUNS --> SYNC
+    RUNS --> ENR
+    RELY -->|"packages dist"| BUILD
+    BUILD -->|"deploys"| SITE
+    BUILD -->|"deploys"| WORKER
+```
+
 ## ✅ Prerequisites
 
 Before running any commands, ensure you have the following installed:
@@ -130,6 +221,9 @@ The Astro site uses the `@astrojs/cloudflare` adapter to output an SSR-ready bui
 ```sh
 # Build the Astro site
 npm run build
+
+# Only to Deploy the Astro site
+npx wrangler deploy
 
 # Deploy the website Worker (requires root wrangler.toml with name "movie-sync-worker")
 npx wrangler deploy --config wrangler.toml --name movie-sync-worker

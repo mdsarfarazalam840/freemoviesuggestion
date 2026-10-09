@@ -5,7 +5,7 @@ import Hero from '../components/Hero.astro';
 import MovieCardAstro from '../components/MovieCard.astro';
 import Footer from '../components/Footer.astro';
 import FAQ from '../components/FAQ.astro';
-import { getBollywoodMovies, getHollywoodMovies, getTollywoodMovies, getPopularMovies } from '../services/movieService';
+import { getHomePageData } from '../services/movieService';
 import { GENRES, OTT_PLATFORMS, MOOD_TAGS, MOOD_EMOJI, MOOD_DESCRIPTION } from '../data/movies';
 
 export const prerender = false;
@@ -15,10 +15,8 @@ let bollywood: any[] = [];
 let hollywood: any[] = [];
 let tollywood: any[] = [];
 try {
-	top10 = await getPopularMovies(10);
-	bollywood = await getBollywoodMovies();
-	hollywood = await getHollywoodMovies();
-	tollywood = await getTollywoodMovies();
+	// One bundled cache read instead of four — this is the busiest route on the site.
+	({ top10, bollywood, hollywood, tollywood } = await getHomePageData());
 } catch (error) {
 	console.error('[index.astro] Error:', error);
 	Astro.response.status = 500;

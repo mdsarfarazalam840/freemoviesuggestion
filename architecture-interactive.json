@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "FreeMovieSuggestion — Sync · Store · Serve",
+    "output": "architecture-interactive.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "serve-path",
+        "label": "Serve path",
+        "focus": ["user", "site", "upstash", "supabase"],
+        "note": "Follow a page request from the browser to the source of truth."
+      },
+      {
+        "id": "sync-path",
+        "label": "Sync path",
+        "focus": ["tmdb", "sync", "supabase", "upstash", "gh"],
+        "note": "Daily ingestion from TMDB and the shared progress checkpoint."
+      },
+      {
+        "id": "cache-tier",
+        "label": "Cache tier",
+        "focus": ["site", "upstash", "kv"],
+        "note": "Upstash primary cache with Workers KV on standby."
+      }
+    ]
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "User", "sublabel": "Browser", "pos": [40, 300], "size": [128, 64] },
+    { "id": "site", "type": "backend", "label": "Astro SSR Site", "sublabel": "edge cache tier", "tag": "SSR", "pos": [300, 300], "size": [176, 64] },
+    { "id": "upstash", "type": "database", "label": "Upstash Redis", "sublabel": "tier-2 cache · sync_progress", "pos": [720, 300], "size": [176, 64] },
+    { "id": "supabase", "type": "database", "label": "Supabase Postgres", "sublabel": "movies table · full-text", "pos": [720, 64], "size": [176, 64] },
+    { "id": "kv", "type": "database", "label": "Workers KV", "sublabel": "CACHE namespace · standby", "pos": [300, 520], "size": [176, 64] },
+    { "id": "tmdb", "type": "external", "label": "TMDB API", "sublabel": "api.themoviedb.org", "pos": [40, 64], "size": [176, 64] },
+    { "id": "sync", "type": "backend", "label": "movie-sync-worker", "sublabel": "cron 0 0 * * * UTC", "tag": "CRON", "pos": [300, 64], "size": [176, 64] },
+    { "id": "gh", "type": "cloud", "label": "GitHub Actions", "sublabel": "Actions · sync.yml", "pos": [1010, 64], "size": [176, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Cloudflare Workers", "wraps": ["site", "kv", "sync"], "pad": 24 }
+  ],
+  "connections": [
+    { "id": "http-request", "from": "user", "to": "site", "label": "HTTP request", "variant": "emphasis" },
+    { "id": "cache-rw", "from": "site", "to": "upstash", "label": "cache read / write", "labelDy": 28 },
+    { "id": "cache-miss", "from": "site", "to": "supabase", "label": "on cache miss" },
+    { "id": "standby-write", "from": "site", "to": "kv", "label": "standby dual-write", "variant": "dashed", "labelAt": [388, 378] },
+    { "id": "movie-data", "from": "tmdb", "to": "sync", "label": "movie data" },
+    { "id": "upsert", "from": "sync", "to": "supabase", "label": "upsert" },
+    { "id": "daily-sync", "from": "gh", "to": "supabase", "label": "daily sync", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Serve",
+      "items": [
+        "Astro SSR site on a Cloudflare Worker",
+        "Two-tier cache: Upstash primary, Workers KV standby"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Store",
+      "items": [
+        "Supabase Postgres is the source of truth",
+        "Full-text search over the movies table"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Sync",
+      "items": [
+        "movie-sync-worker runs daily at 0 0 * * * UTC",
+        "GitHub Actions runs the same sync script with a shared sync_progress checkpoint"
+      ]
+    }
+  ]
+}
