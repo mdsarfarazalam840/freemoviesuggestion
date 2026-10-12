@@ -234,14 +234,54 @@ The Astro site uses the `@astrojs/cloudflare` adapter to output an SSR-ready bui
 # Build the Astro site
 npm run build
 
-# Only to Deploy the Astro site
+# Deploy the website Worker using the root configuration
+npx wrangler deploy --config wrangler.json
+
+
+# Deploy the website completely 
 npx wrangler deploy
 
-# Deploy the website Worker (requires root wrangler.toml with name "movie-sync-worker")
-npx wrangler deploy --config wrangler.toml --name movie-sync-worker
 ```
 
 > For production, connect your GitHub repository to Cloudflare via automatic CI/CD deployments on every push to `main`.
+
+### First-party analytics (Cloudflare D1)
+
+The website analytics schema is kept in [`migrations/0001_analytics.sql`](./migrations/0001_analytics.sql). D1 setup requires Wrangler authentication and a real database ID from the account that will deploy the website. The root [`wrangler.json`](./wrangler.json) contains the website's `ANALYTICS_DB` binding, database ID, and migrations directory. Run these commands locally when provisioning or updating the database; the migration command is intentionally not run as part of the build:
+
+```sh
+# Authenticate Wrangler if this machine is not already authenticated
+npx wrangler login
+
+# Create the database and copy the returned database_id
+npx wrangler d1 create freemoviesuggestion-analytics
+
+# After adding the binding below, apply migrations remotely
+npx wrangler d1 migrations apply freemoviesuggestion-analytics --remote
+```
+
+Add the returned `database_id` to the production site configuration in `wrangler.json` (do not use a placeholder in a deployed configuration):
+
+```json
+{
+  "d1_databases": [
+    {
+      "binding": "ANALYTICS_DB",
+      "database_name": "freemoviesuggestion-analytics",
+      "database_id": "<paste-the-database-id-returned-by-wrangler>",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
+```
+
+The analytics binding belongs to the website Worker; do not add it to `workers/wrangler.toml`, which configures the separate movie-sync Worker. Raw page-view events are intended to be retained for 90 days and should be cleaned up by the analytics cleanup path.
+
+The protected dashboard is available at `/admin/analytics`. Set `ANALYTICS_ADMIN_SECRET` in the website Worker environment. Enter the secret in the dashboard form; it is sent only in the `x-analytics-admin-secret` request header and is never placed in the URL or rendered into page HTML. The summary API returns aggregates only and responds with an unavailable state when D1 is not configured, so movie pages remain useful without analytics.
+
+Raw page-view rows are retained for 90 days. Cleanup is currently manual and best-effort: send an authenticated `POST /api/analytics/cleanup` request with the same header. It removes at most 1,000 expired page views and 1,000 sessions older than 180 days per request, while preserving visitor aggregates used for total visitors. It will remain manual until a real D1 binding and a scheduled Worker trigger are configured; no remote cron is wired here.
+
+Analytics ingestion has a small per-isolate defense-in-depth limit: at most 120 accepted requests per 60-second isolate window, with at most 30 events per visitor per window and a 1-second minimum interval per visitor. These in-memory limits reset when an isolate is replaced and are not a substitute for edge controls. For production, consider Cloudflare edge/WAF rate limiting as an additional distributed control; this implementation does not use raw IP addresses and does not log event payloads. Visitors can opt out before sending an event with `localStorage.setItem('analytics_opt_out','1')` (the client also supports the `analytics_opt_out=1` request opt-out). First-party analytics can coexist with Google Analytics or another consent-managed provider; keep each provider's privacy notice and consent controls accurate and disclose the combined data collection.
 
 ## 🤝 Contribution
 
