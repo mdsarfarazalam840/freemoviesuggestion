@@ -16,6 +16,7 @@ pnpm-debug.log*
 # environment variables
 .env
 .env.production
+.dev.vars
 
 # macOS-specific files
 .DS_Store
@@ -38,3 +39,5 @@ graphify-*/
 test_*
 
 test-*
+docs/
+.superpowers/

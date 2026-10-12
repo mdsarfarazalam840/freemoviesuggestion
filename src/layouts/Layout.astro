@@ -103,6 +103,149 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 	</head>
 	<body class="selection:bg-link/20 selection:text-link transition-colors duration-300">
 		<slot />
+		<script is:inline>
+			(() => {
+				const stateKey = '__freeMovieSuggestionAnalyticsStarted';
+				const visitorStorageKey = 'analytics_visitor_id';
+				const sessionStorageKey = 'analytics_session_id';
+				const heartbeatIntervalMs = 60 * 1000;
+				const analyticsOptedOut = () => {
+					try {
+						return new URLSearchParams(window.location.search).get('analytics_opt_out') === '1' ||
+							window.localStorage.getItem('analytics_opt_out') === '1';
+					} catch {
+						return false;
+					}
+				};
+
+				if (window[stateKey] || analyticsOptedOut()) return;
+				window[stateKey] = true;
+
+				const createId = () => {
+					try {
+						if (typeof crypto?.randomUUID === 'function') return crypto.randomUUID();
+						if (typeof crypto?.getRandomValues === 'function') {
+							const bytes = new Uint8Array(16);
+							crypto.getRandomValues(bytes);
+							bytes[6] = (bytes[6] & 0x0f) | 0x40;
+							bytes[8] = (bytes[8] & 0x3f) | 0x80;
+							return [...bytes].map((byte, index) => {
+								const hex = byte.toString(16).padStart(2, '0');
+								return [4, 6, 8, 10].includes(index) ? `-${hex}` : hex;
+							}).join('');
+						}
+					} catch { /* Fall through to a local, non-identifying fallback. */ }
+					const random = () => Math.floor(Math.random() * 0x100000000).toString(16).padStart(8, '0');
+					const time = Date.now().toString(16).padStart(12, '0');
+					return `${time.slice(-8)}-${random().slice(0, 4)}-4${random().slice(0, 3)}-8${random().slice(0, 3)}-${random()}${random().slice(0, 4)}`;
+				};
+				const isUuidV4 = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+				const getStoredId = (getStorage, key) => {
+					try {
+						const storage = getStorage();
+						const existing = storage.getItem(key);
+						if (existing && isUuidV4(existing)) return existing;
+						const created = createId();
+						storage.setItem(key, created);
+						return created;
+					} catch {
+						return createId();
+					}
+				};
+
+				const visitorId = getStoredId(() => window.localStorage, visitorStorageKey);
+				const sessionId = getStoredId(() => window.sessionStorage, sessionStorageKey);
+				let heartbeatTimer;
+				let optOutWatcher;
+				let lastHeartbeatAt = 0;
+				let stopped = false;
+				let onVisibilityChange;
+				let onPageHide;
+				let onStorage;
+				let onLoad;
+				const supportsKeepalive = typeof Request !== 'undefined' && 'keepalive' in Request.prototype;
+
+				const send = (event) => {
+					if (stopped) return;
+					if (analyticsOptedOut()) return stop();
+					try {
+						const currentUrl = new URL(window.location.href);
+						const truncateUtm = (value) => value ? value.slice(0, 64) : undefined;
+						const payload = {
+							visitorId,
+							sessionId,
+							path: window.location.pathname,
+							referrer: document.referrer || undefined,
+							utmSource: truncateUtm(currentUrl.searchParams.get('utm_source')),
+							utmMedium: truncateUtm(currentUrl.searchParams.get('utm_medium')),
+							event,
+							timestamp: Date.now(),
+						};
+						const request = {
+							method: 'POST',
+							headers: { 'content-type': 'application/json' },
+							body: JSON.stringify(payload),
+						};
+						if (supportsKeepalive) request.keepalive = true;
+						void fetch('/api/analytics/track', request).catch(() => {});
+					} catch { /* Analytics must never affect page rendering. */ }
+				};
+
+				const stopHeartbeat = () => {
+					if (heartbeatTimer !== undefined) window.clearInterval(heartbeatTimer);
+					heartbeatTimer = undefined;
+				};
+				const stop = () => {
+					if (stopped) return;
+					stopped = true;
+					stopHeartbeat();
+					if (optOutWatcher !== undefined) window.clearInterval(optOutWatcher);
+					optOutWatcher = undefined;
+					if (onVisibilityChange) document.removeEventListener('visibilitychange', onVisibilityChange);
+					if (onPageHide) window.removeEventListener('pagehide', onPageHide);
+					if (onStorage) window.removeEventListener('storage', onStorage);
+					if (onLoad) window.removeEventListener('load', onLoad);
+				};
+				const startHeartbeat = () => {
+					if (stopped || analyticsOptedOut()) return stop();
+					if (document.visibilityState !== 'visible' || heartbeatTimer !== undefined) return;
+					heartbeatTimer = window.setInterval(() => {
+						if (analyticsOptedOut()) return stop();
+						if (document.visibilityState !== 'visible') return;
+						const now = Date.now();
+						if (now - lastHeartbeatAt < heartbeatIntervalMs) return;
+						lastHeartbeatAt = now;
+						send('heartbeat');
+					}, heartbeatIntervalMs);
+				};
+				const start = () => {
+					if (stopped) return;
+					if (analyticsOptedOut()) return stop();
+					send('page_view');
+					startHeartbeat();
+				};
+
+				onVisibilityChange = () => {
+					if (analyticsOptedOut()) return stop();
+					if (document.visibilityState === 'visible') startHeartbeat();
+					else stopHeartbeat();
+				};
+				onPageHide = stop;
+				onStorage = (event) => {
+					if (event.key === 'analytics_opt_out' && event.newValue === '1') stop();
+				};
+				onLoad = start;
+				document.addEventListener('visibilitychange', onVisibilityChange);
+				window.addEventListener('pagehide', onPageHide, { once: true });
+				window.addEventListener('storage', onStorage);
+				optOutWatcher = window.setInterval(() => {
+					if (analyticsOptedOut()) stop();
+				}, 5000);
+				if (document.readyState === 'complete') start();
+				else window.addEventListener('load', onLoad, { once: true });
+			})();
+		</script>
 	</body>
 </html>
 

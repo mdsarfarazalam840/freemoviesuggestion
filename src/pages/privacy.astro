@@ -20,18 +20,18 @@ import Footer from '../components/Footer.astro';
         <div>
           <h2 class="text-2xl font-semibold text-ink">Introduction</h2>
           <p class="mt-4 text-body leading-relaxed">
-            Welcome to Free Movie Suggestion. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we look after your personal data when you visit our website and tell you about your privacy rights and how the law protects you.
+            Welcome to Free Movie Suggestion. We respect your privacy and explain below what information we collect, how we use it, and the choices available to you. Please review the requirements that apply to you and your location if you need specific privacy-law guidance.
           </p>
         </div>
 
         <div>
           <h2 class="text-2xl font-semibold text-ink">Data We Collect</h2>
           <p class="mt-4 text-body leading-relaxed">
-            We do not require you to create an account or provide personal information to use our movie suggestion service. However, we may collect certain non-personal information automatically:
+            We do not require you to create an account or provide information directly identifying you to use our movie suggestion service. However, we may collect certain information automatically:
           </p>
           <ul class="mt-4 list-disc pl-6 space-y-2 text-body">
-            <li>Usage Data: Information about how you use our website, such as search queries and pages visited.</li>
-            <li>Technical Data: IP address, browser type and version, time zone setting and location, and browser plug-in types and versions.</li>
+            <li>First-party analytics: random UUIDs used as pseudonymous visitor and session identifiers, stored in localStorage and sessionStorage respectively, along with event times, page paths (without query text), and page-view or session activity. Depending on applicable requirements and the information available to us, these identifiers may be treated as personal data.</li>
+            <li>Traffic information: the referring domain and broad UTM source and medium categories. We do not collect raw IP addresses through this first-party analytics implementation.</li>
           </ul>
         </div>
 
@@ -43,24 +43,24 @@ import Footer from '../components/Footer.astro';
           <ul class="mt-4 list-disc pl-6 space-y-2 text-body">
             <li>Provide and maintain our service.</li>
             <li>Improve our website and recommendation engine.</li>
-            <li>Monitor the usage of our service to prevent technical issues.</li>
+            <li>Monitor anonymous usage of our service and prevent technical issues.</li>
           </ul>
         </div>
 
         <div>
           <h2 class="text-2xl font-semibold text-ink">Cookies</h2>
           <p class="mt-4 text-body leading-relaxed">
-            We use cookies and similar tracking technologies to track the activity on our service and hold certain information. Cookies are files with a small amount of data which may include an anonymous unique identifier.
+            Our first-party analytics does not use cookies. It stores a random UUID in your browser's localStorage as a pseudonymous visitor identifier and another random UUID in sessionStorage as a pseudonymous session identifier. Depending on applicable requirements and the information available to us, these identifiers may be treated as personal data. You can opt out by running <code class="rounded bg-surface px-1.5 py-0.5 text-sm">localStorage.setItem('analytics_opt_out', '1')</code> in your browser, or by using an <code class="rounded bg-surface px-1.5 py-0.5 text-sm">analytics_opt_out=1</code> URL parameter. Analytics stores data in Cloudflare D1: raw page-view events are retained for up to 90 days and are subject to manual cleanup; session summaries may be retained for up to 180 days.
           </p>
           <p class="mt-4 text-body leading-relaxed">
-            You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent. However, if you do not accept cookies, you may not be able to use some portions of our service.
+            You can clear localStorage or sessionStorage at any time. Refusing storage may prevent first-party analytics from associating activity with a visitor or session, but it does not prevent you from using the service.
           </p>
         </div>
 
         <div>
           <h2 class="text-2xl font-semibold text-ink">Third-Party Services</h2>
           <p class="mt-4 text-body leading-relaxed">
-            We may use third-party service providers to monitor and analyze the use of our service, such as Google Analytics. These third parties have their own privacy policies addressing how they use such information.
+            Separately from our first-party analytics, this site uses Google Analytics (measurement ID G-C9BKQ4HD0C) and Google AdSense. These Google services may use their own cookies, identifiers, and processing to measure visits and serve or personalize advertising according to Google's policies and your available Google/browser controls. These third parties have their own privacy policies addressing how they use such information.
           </p>
         </div>
 

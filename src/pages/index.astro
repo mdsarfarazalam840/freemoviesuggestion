@@ -31,6 +31,60 @@ try {
 			subtitle="The ultimate suggestion engine for Bollywood, Hollywood, and Tollywood. Filter by genre, OTT platforms, and more."
 		/>
 
+		<section id="live-visitors" class="mx-auto mt-8 max-w-7xl px-4 sm:px-6 lg:px-8" hidden aria-live="polite">
+			<p class="text-center text-sm font-semibold text-body"><span aria-hidden="true">●</span> <span id="live-visitors-count"></span> people watching now</p>
+		</section>
+		<script>
+			const liveWidget = document.getElementById('live-visitors') as HTMLElement;
+			const liveCount = document.getElementById('live-visitors-count') as HTMLElement;
+			const LIVE_REFRESH_MS = 60_000;
+			let liveRefresh: ReturnType<typeof setTimeout> | undefined;
+			let liveFetchInFlight = false;
+
+			function clearLiveRefresh() {
+				if (liveRefresh !== undefined) {
+					clearTimeout(liveRefresh);
+					liveRefresh = undefined;
+				}
+			}
+
+			function scheduleLiveRefresh() {
+				clearLiveRefresh();
+				if (document.visibilityState === 'visible') {
+					liveRefresh = setTimeout(() => { void fetchLiveVisitors(); }, LIVE_REFRESH_MS);
+				}
+			}
+
+			async function fetchLiveVisitors() {
+				if (liveFetchInFlight) return;
+				liveFetchInFlight = true;
+				clearLiveRefresh();
+				try {
+					const response = await fetch('/api/analytics/live', { headers: { accept: 'application/json' }, cache: 'no-store' });
+					if (!response.ok) throw new Error('live count unavailable');
+					const data = await response.json() as { available?: boolean; liveVisitors?: number };
+					if (data.available !== true || !Number.isFinite(data.liveVisitors)) throw new Error('live count unavailable');
+					liveCount.textContent = String(data.liveVisitors);
+					liveWidget.hidden = false;
+				} catch {
+					liveWidget.hidden = true;
+				} finally {
+					liveFetchInFlight = false;
+					scheduleLiveRefresh();
+				}
+			}
+
+			function handleLiveVisibilityChange() {
+				clearLiveRefresh();
+				if (document.visibilityState === 'visible') {
+					void fetchLiveVisitors();
+				}
+			}
+
+			void fetchLiveVisitors();
+			document.addEventListener('visibilitychange', handleLiveVisibilityChange);
+		</script>
+
 		<!-- Top 10 Section -->
 		<section class="py-16 sm:py-24 bg-canvas">
 			<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

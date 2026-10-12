@@ -6,15 +6,26 @@
     "node": ">=22.12.0"
   },
   "overrides": {
-    "esbuild": ">=0.28.1",
+    "esbuild": "^0.28.1",
     "vite": "^8.2.2",
-    "sharp": "^0.35.4",
+    "@cloudflare/vite-plugin": "^1.63.1",
+    "baseline-browser-mapping": "^2.11.28",
+    "browserslist": "^4.29.3",
+    "devalue": "^5.9.4",
+    "sharp": "^0.35.5",
     "nanoid": "^3.3.18",
     "svgo": "^4.0.2",
-    "fast-uri": "^3.1.6",
+    "fast-uri": "^3.1.8",
+    "http-cache-semantics": "^4.3.0",
+    "miniflare": "5.20261006.1-alpha",
     "postcss": "^8.5.26",
     "js-yaml": "^4.3.2",
-    "undici": "^7.29.0",
+    "smol-toml": "^1.9.1",
+    "source-map-js": "^1.2.2",
+    "undici": "^7.30.0",
+    "unifont": {
+      "undici": "^8.0.0"
+    },
     "yaml-language-server": {
       "yaml": "^2.8.3"
     }
@@ -23,6 +34,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "test": "node --import tsx --test tests/analytics.test.ts tests/performance.test.ts",
     "sync": "node --use-system-ca --import tsx scripts/run-sync.ts",
     "astro": "astro"
   },
@@ -49,6 +61,6 @@
     "@types/node": "^25.9.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.22.4",
-    "wrangler": "^4.127.0"
+    "wrangler": "^4.149.0"
   }
 }

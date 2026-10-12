@@ -1,0 +1,65 @@
+---
+const title = 'Analytics dashboard';
+---
+<html lang="en">
+  <head><title>{title}</title><meta name="robots" content="noindex,nofollow" /></head>
+  <body>
+    <main style="max-width: 960px; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif;">
+      <h1>{title}</h1>
+      <p>Enter the configured admin secret to load aggregate analytics. The secret is sent only in a request header.</p>
+      <form id="analytics-auth">
+        <label for="analytics-secret">Admin secret</label>
+        <input id="analytics-secret" type="password" autocomplete="current-password" required />
+        <button type="submit">Load analytics</button>
+      </form>
+      <p id="analytics-status" role="status">Awaiting authentication.</p>
+      <section id="analytics-results" hidden>
+        <div id="analytics-metrics" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;"></div>
+        <h2>Hourly trend</h2><pre id="analytics-hourly"></pre>
+        <h2>Top paths</h2><pre id="analytics-paths"></pre>
+        <h2>Sources</h2><pre id="analytics-sources"></pre>
+        <h2>Social sources</h2><pre id="analytics-social"></pre>
+      </section>
+    </main>
+    <script>
+      const form = document.querySelector('#analytics-auth') as HTMLFormElement;
+      const status = document.querySelector('#analytics-status') as HTMLElement;
+      const results = document.querySelector('#analytics-results') as HTMLElement;
+      const secretInput = document.querySelector('#analytics-secret') as HTMLInputElement;
+      const metricsOutput = document.querySelector('#analytics-metrics') as HTMLElement;
+      const hourlyOutput = document.querySelector('#analytics-hourly') as HTMLElement;
+      const pathsOutput = document.querySelector('#analytics-paths') as HTMLElement;
+      const sourcesOutput = document.querySelector('#analytics-sources') as HTMLElement;
+      const socialOutput = document.querySelector('#analytics-social') as HTMLElement;
+      const text = (value: unknown) => JSON.stringify(value, null, 2);
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        status.textContent = 'Loading…'; results.hidden = true;
+        const secret = secretInput.value;
+        try {
+          const response = await fetch('/api/analytics/summary', { headers: { 'x-analytics-admin-secret': secret } });
+          const data = await response.json() as { available?: boolean; liveSessions: number; visitors24h: number; totalVisitors: number; pageViews24h: number; retainedPageViews: number; hourly: unknown; topPaths: unknown; sourceBreakdown: unknown; socialSources: unknown };
+          if (!response.ok || !data.available) throw new Error(response.status === 401 ? 'Authentication failed.' : 'Analytics are unavailable.');
+           const metrics = [['Live sessions', data.liveSessions], ['Visitors (24h)', data.visitors24h], ['Total visitors', data.totalVisitors], ['Page views (24h)', data.pageViews24h], ['Retained page views', data.retainedPageViews]] as const;
+           metricsOutput.replaceChildren();
+           for (const [label, value] of metrics) {
+             if (!Number.isFinite(value) || value < 0) throw new Error('Analytics returned an invalid metric.');
+             const article = document.createElement('article');
+             const heading = document.createElement('strong');
+             heading.textContent = label;
+             const number = document.createElement('div');
+             number.textContent = String(value);
+             article.appendChild(heading);
+             article.appendChild(number);
+             metricsOutput.appendChild(article);
+           }
+          hourlyOutput.textContent = text(data.hourly);
+          pathsOutput.textContent = text(data.topPaths);
+          sourcesOutput.textContent = text(data.sourceBreakdown);
+          socialOutput.textContent = text(data.socialSources);
+          results.hidden = false; status.textContent = 'Analytics loaded.';
+        } catch (error) { status.textContent = error instanceof Error ? error.message : 'Analytics are unavailable.'; }
+      });
+    </script>
+  </body>
+</html>
