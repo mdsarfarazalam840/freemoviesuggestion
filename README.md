@@ -48,20 +48,28 @@ The goal of this project is to provide a high-performance, visually appealing mo
 - **Data Source:** [TMDB API](https://www.themoviedb.org/documentation/api)
 
 ## 🏗 Architecture
-The project follows a "Sync-Store-Serve" architecture:
-1. **Sync (Background):** A TypeScript script runs daily via GitHub Actions. It fetches movie details from TMDB and upserts them into Supabase.
-2. **Store (Data):** Supabase acts as the primary source of truth, storing movie metadata, cast, and genres.
-3. **Serve (Edge):** Astro server endpoints handle requests. They first check Upstash Redis for a cached response. If not found, they query Supabase and cache the result.
+The project follows a **Sync-Store-Serve** architecture:
+
+1. **Sync (background ingestion):** The dedicated Cloudflare sync Worker handles the `0 0 * * *` cron trigger (and an optional `/trigger-sync` request). Each run refreshes trending movies and performs the resumable TMDB bulk sync, upserting movie rows into Supabase first; afterward, enrichment fills missing watch scores and mood tags. The GitHub Actions workflow is a separate runnable entry point for `scripts/run-sync.ts`, with scheduled and manual-dispatch modes.
+2. **Store (source of truth and cache backends):** Supabase PostgreSQL is the source of truth for movie metadata and enrichment fields. Sync progress is checkpointed in Upstash Redis. Website response data uses a three-tier read-through cache: short-lived per-isolate memory, Cloudflare `caches.default`, then the metered `activeStore`. Unbounded key spaces skip the metered remote cache tier entirely, while bounded/hot keys use it. In automatic mode, `activeStore` reads Upstash Redis first and fails over to Workers KV only when Upstash errors; writes populate both backends so KV is warm. `CACHE_BACKEND=upstash` or `CACHE_BACKEND=kv` can pin the metered tier.
+3. **Serve (edge request path):** Astro middleware normalizes cacheable GET requests and checks the Cloudflare edge cache before rendering. On an edge miss, the movie service checks memory, edge cache, and the active remote store; only then does it query Supabase (or use the local fallback catalog when Supabase is not configured). Middleware response-cache writes and movie-service edge-cache writes are scheduled in the background with the Worker execution context when available; metered remote cache writes are awaited.
+
+![FreeMovieSuggestion architecture — Sync, Store, and Serve across Cloudflare Workers, Supabase, Upstash Redis, Workers KV, and TMDB](./architecture.png)
 
 ```mermaid
 graph LR
-    GH[GitHub Actions] --> |Sync| SB[Supabase]
-    TMDB[TMDB API] --> |Data| GH
-    U[User] --> |Request| CP[Cloudflare Workers]
-    CP --> |Query| UR[Upstash Redis]
-    UR --> |Cache Miss| SB
-    SB --> CP
-    CP --> |Cache Hit| U
+    TMDB[TMDB API] --> |Movie data| SYNC[Sync Worker or GitHub Actions]
+    SYNC --> |Upsert movie rows| SB[Supabase PostgreSQL]
+    SYNC --> |Progress checkpoint| UR[Upstash Redis]
+    U[User] --> |Request| MW[Astro middleware]
+    MW --> |Edge hit| U
+    MW --> |Edge miss| APP[Movie service]
+    APP --> |Memory → caches.default → activeStore| CACHE[Cache tiers]
+    CACHE --> |Upstash primary / KV failover| STORE[Upstash Redis + Workers KV]
+    APP --> |Cache miss only| SB
+    SB --> APP
+    APP --> |Response + cache fill| MW
+    MW --> U
 ```
 
 📐 **Interactive diagram — opens straight from this README:**

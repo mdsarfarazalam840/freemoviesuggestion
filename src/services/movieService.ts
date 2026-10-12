@@ -8,6 +8,13 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 24;
 const MAX_LIMIT = 30;
 
+const OTT_PLATFORM_BY_NAME = new Map<string, OTTPlatform>();
+for (const platform of OTT_PLATFORMS) {
+  const name = platform.name.toLowerCase();
+  // Preserve Array.find's first-match behavior for duplicate names.
+  if (!OTT_PLATFORM_BY_NAME.has(name)) OTT_PLATFORM_BY_NAME.set(name, platform);
+}
+
 // TTLs track the once-daily sync rather than an arbitrary hour, so each key is
 // refilled once per cache-day instead of 24 times.
 const CATALOG_TTL = 90_000; // 25h — just past the cache-day roll
@@ -131,14 +138,14 @@ function normalizeOttPlatforms(value: unknown): OTTPlatform[] {
   return parsed
     .map((platform) => {
       if (typeof platform === 'string') {
-        const knownPlatform = OTT_PLATFORMS.find((item) => item.name.toLowerCase() === platform.toLowerCase());
+        const knownPlatform = OTT_PLATFORM_BY_NAME.get(platform.toLowerCase());
         return knownPlatform || { name: platform, logo: '', url: '#' };
       }
 
       if (platform && typeof platform === 'object' && 'name' in platform) {
         const name = String((platform as { name: unknown }).name);
         const platformData = platform as Partial<OTTPlatform>;
-        const knownPlatform = OTT_PLATFORMS.find((item) => item.name.toLowerCase() === name.toLowerCase());
+        const knownPlatform = OTT_PLATFORM_BY_NAME.get(name.toLowerCase());
         return {
           name,
           logo: platformData.logo || knownPlatform?.logo || '',
@@ -273,11 +280,13 @@ function getLocalMoviePage(options: MovieQueryOptions = {}): FetchMoviePageResul
   const mood = normalizeFilter(options.mood);
 
   const filteredMovies = localMovies
-    .filter((movie) => !region || matchesFilter(movie.region, region))
-    .filter((movie) => !genre || movieHasGenre(movie, genre))
-    .filter((movie) => !ott || movieHasOttPlatform(movie, ott))
-    .filter((movie) => !mood || (movie.moodTags && movie.moodTags.some((mt) => matchesFilter(mt, mood))))
-    .filter((movie) => !options.topOnly || movie.isTop10)
+    .filter((movie) =>
+      (!region || matchesFilter(movie.region, region)) &&
+      (!genre || movieHasGenre(movie, genre)) &&
+      (!ott || movieHasOttPlatform(movie, ott)) &&
+      (!mood || (movie.moodTags && movie.moodTags.some((mt) => matchesFilter(mt, mood)))) &&
+      (!options.topOnly || movie.isTop10)
+    )
     .sort(sortMoviesForCatalog);
 
   const from = (page - 1) * limit;
@@ -502,6 +511,7 @@ export async function getMovieById(id: number | string): Promise<Movie | null> {
 
 export async function searchMovies(searchTerm: string, options: MovieQueryOptions = {}): Promise<MoviePage> {
   const normalizedSearchTerm = searchTerm.trim().slice(0, 80);
+  const lowercaseSearchTerm = normalizedSearchTerm.toLowerCase();
   const page = normalizePage(options.page);
   const limit = normalizeLimit(options.limit);
   const from = (page - 1) * limit;
@@ -521,8 +531,8 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
   if (!hasSupabaseConfig()) {
     const localResults = localMovies.filter(
       (m) =>
-        m.title.toLowerCase().includes(normalizedSearchTerm.toLowerCase()) ||
-        m.description.toLowerCase().includes(normalizedSearchTerm.toLowerCase())
+        m.title.toLowerCase().includes(lowercaseSearchTerm) ||
+        m.description.toLowerCase().includes(lowercaseSearchTerm)
     );
     const safeCount = localResults.length;
     return {
@@ -572,8 +582,8 @@ export async function searchMovies(searchTerm: string, options: MovieQueryOption
     console.log(`[search] No Supabase results for "${normalizedSearchTerm}", using local fallback`);
     const localResults = localMovies.filter(
       (m) =>
-        m.title.toLowerCase().includes(normalizedSearchTerm.toLowerCase()) ||
-        m.description.toLowerCase().includes(normalizedSearchTerm.toLowerCase())
+        m.title.toLowerCase().includes(lowercaseSearchTerm) ||
+        m.description.toLowerCase().includes(lowercaseSearchTerm)
     );
     const safeCount = localResults.length;
     const fallbackResult: MoviePage = {

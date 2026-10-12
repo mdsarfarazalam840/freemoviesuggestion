@@ -38,3 +38,5 @@ graphify-*/
 test_*
 
 test-*
+docs/
+.superpowers/
