@@ -82,9 +82,12 @@ graph LR
 
 The homepage's **Live now** counter is first-party and D1-first. A visible browser sends a heartbeat every 15 seconds to `POST /api/analytics/track`; the Worker stores the session activity in Cloudflare D1. `GET /api/analytics/live` counts distinct `visitor_id` values seen within the last 45 seconds, so multiple tabs from one browser count as one visitor. Google Analytics 4 Realtime is retained only as a fallback when D1 is unavailable. The public response exposes only an aggregate count and its source.
 
-- **Archify interactive architecture:** [`architecture/live-presence.architecture.html`](./architecture/live-presence.architecture.html)
-- **Archify specification:** [`architecture/specs/live-presence.architecture.json`](./architecture/specs/live-presence.architecture.json)
-- **Editorial diagram-design view:** [`architecture/live-count-request.architecture.html`](./architecture/live-count-request.architecture.html)
+📐 **Live-presence diagrams — open directly from this README:**
+
+- 🚀 **Live (GitHub Pages):** [**Open the D1-first interactive architecture diagram**](https://mdsarfarazalam840.github.io/freemoviesuggestion/architecture/live-presence.architecture.html) — an explorable view with guided *First-party presence*, *External fallback*, and *Private analytics* views (zoom, pan, light/dark). [Open the editorial diagram-design view](https://mdsarfarazalam840.github.io/freemoviesuggestion/architecture/live-count-request.architecture.html).
+- ⚡ **Instant preview (no deploy needed):** [open the Archify diagram via htmlpreview](https://htmlpreview.github.io/?https://raw.githubusercontent.com/mdsarfarazalam840/freemoviesuggestion/main/architecture/live-presence.architecture.html) — renders the interactive file directly from the repository. [Preview the editorial diagram-design view](https://htmlpreview.github.io/?https://raw.githubusercontent.com/mdsarfarazalam840/freemoviesuggestion/main/architecture/live-count-request.architecture.html).
+- 💾 **Local:** [`live-presence.architecture.html`](./architecture/live-presence.architecture.html) and [`live-count-request.architecture.html`](./architecture/live-count-request.architecture.html) — clone the repo and open either diagram in your browser.
+- 🧾 **Specification:** [view the Archify specification JSON](https://raw.githubusercontent.com/mdsarfarazalam840/freemoviesuggestion/main/architecture/specs/live-presence.architecture.json) or [`open it locally`](./architecture/specs/live-presence.architecture.json) when editing the architecture source.
 
 The Archify artifact was validated with the `showcase` profile: 9/9 checks passed, with zero composition errors and zero warnings. The diagram-design artifact passed its SVG accessibility and single-file self-check.
 
