@@ -108,7 +108,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 				const stateKey = '__freeMovieSuggestionAnalyticsStarted';
 				const visitorStorageKey = 'analytics_visitor_id';
 				const sessionStorageKey = 'analytics_session_id';
-				const heartbeatIntervalMs = 60 * 1000;
+				const heartbeatIntervalMs = 15 * 1000;
 				const analyticsOptedOut = () => {
 					try {
 						return new URLSearchParams(window.location.search).get('analytics_opt_out') === '1' ||

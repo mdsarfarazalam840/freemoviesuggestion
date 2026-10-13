@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Live Now Presence Architecture",
+    "output": "architecture/live-presence.architecture.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "views": [
+      {
+        "id": "presence-path",
+        "label": "First-party presence",
+        "focus": ["browser", "track-api", "d1", "live-api"],
+        "note": "Visible pages heartbeat every 15 seconds; D1 counts distinct visitors seen within 45 seconds."
+      },
+      {
+        "id": "fallback-path",
+        "label": "External fallback",
+        "focus": ["live-api", "ga4", "secrets"],
+        "note": "GA4 is queried only when D1 is unavailable, never before the first-party presence store."
+      },
+      {
+        "id": "private-analytics",
+        "label": "Private analytics",
+        "focus": ["track-api", "d1", "dashboard"],
+        "note": "The private dashboard reads aggregate D1 data; the public endpoint exposes only the count and source."
+      }
+    ]
+  },
+  "components": [
+    { "id": "browser", "type": "external", "label": "Visible browser", "sublabel": "page + 15s heartbeat", "pos": [40, 290], "size": [160, 68], "tag": "PUBLIC" },
+    { "id": "track-api", "type": "backend", "label": "Tracking API", "sublabel": "POST /api/analytics/track", "pos": [270, 410], "size": [180, 72], "tag": "FIRST-PARTY" },
+    { "id": "d1", "type": "database", "label": "Cloudflare D1", "sublabel": "distinct visitor_id · 45s", "pos": [540, 380], "size": [190, 72], "tag": "PRIMARY" },
+    { "id": "live-api", "type": "backend", "label": "Live presence API", "sublabel": "GET /api/analytics/live", "pos": [540, 180], "size": [190, 72], "tag": "D1 FIRST" },
+    { "id": "ga4", "type": "external", "label": "Google Analytics 4", "sublabel": "activeUsers fallback", "pos": [810, 180], "size": [170, 72], "tag": "SECONDARY" },
+    { "id": "secrets", "type": "security", "label": "Worker secrets", "sublabel": "GA4 credentials", "pos": [810, 300], "size": [170, 72], "tag": "SERVER ONLY" },
+    { "id": "dashboard", "type": "backend", "label": "Private dashboard", "sublabel": "aggregate D1 queries", "pos": [810, 420], "size": [170, 72], "tag": "ADMIN" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Cloudflare Worker runtime", "wraps": ["track-api", "d1", "live-api", "secrets", "dashboard"] },
+    { "kind": "security-group", "label": "GA4 fallback boundary", "wraps": ["live-api", "secrets"] }
+  ],
+  "connections": [
+    { "id": "browser-track", "from": "browser", "to": "track-api", "label": "heartbeat", "variant": "emphasis" },
+    { "id": "track-d1", "from": "track-api", "to": "d1", "label": "batch write", "variant": "emphasis" },
+    { "id": "browser-live", "from": "browser", "to": "live-api", "label": "refresh count", "variant": "dashed", "fromSide": "right", "toSide": "left" },
+    { "id": "live-d1", "from": "live-api", "to": "d1", "label": "primary read", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelDx": -90, "labelDy": 24 },
+    { "id": "live-ga4", "from": "live-api", "to": "ga4", "label": "fallback only", "variant": "dashed" },
+    { "id": "live-secrets", "from": "live-api", "to": "secrets", "label": "sign request", "variant": "security", "fromSide": "bottom", "toSide": "top" },
+    { "id": "dashboard-d1", "from": "dashboard", "to": "d1", "label": "private aggregates", "variant": "dashed", "fromSide": "left", "toSide": "right", "labelDy": 80 }
+  ],
+  "cards": [
+    { "dot": "violet", "title": "Live now", "items": ["D1 is authoritative", "Distinct visitors, not tabs", "45-second expiry window"] },
+    { "dot": "emerald", "title": "Heartbeat", "items": ["Visible pages check in every 15 seconds", "Opt-out remains respected", "Tracking failures stay non-blocking"] },
+    { "dot": "rose", "title": "Fallback", "items": ["GA4 is queried only after D1 fails", "Credentials remain server-side", "Public response contains aggregates only"] }
+  ]
+}

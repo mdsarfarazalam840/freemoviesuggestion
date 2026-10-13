@@ -78,6 +78,16 @@ graph LR
 - ⚡ **Instant preview (no deploy needed):** [open via htmlpreview](https://htmlpreview.github.io/?https://raw.githubusercontent.com/mdsarfarazalam840/freemoviesuggestion/master/architecture-interactive.html) — renders the file directly from the repository.
 - 💾 **Local:** [`architecture-interactive.html`](./architecture-interactive.html) — clone the repo and open it in your browser.
 
+### 📡 Current live-presence architecture
+
+The homepage's **Live now** counter is first-party and D1-first. A visible browser sends a heartbeat every 15 seconds to `POST /api/analytics/track`; the Worker stores the session activity in Cloudflare D1. `GET /api/analytics/live` counts distinct `visitor_id` values seen within the last 45 seconds, so multiple tabs from one browser count as one visitor. Google Analytics 4 Realtime is retained only as a fallback when D1 is unavailable. The public response exposes only an aggregate count and its source.
+
+- **Archify interactive architecture:** [`architecture/live-presence.architecture.html`](./architecture/live-presence.architecture.html)
+- **Archify specification:** [`architecture/specs/live-presence.architecture.json`](./architecture/specs/live-presence.architecture.json)
+- **Editorial diagram-design view:** [`architecture/live-count-request.architecture.html`](./architecture/live-count-request.architecture.html)
+
+The Archify artifact was validated with the `showcase` profile: 9/9 checks passed, with zero composition errors and zero warnings. The diagram-design artifact passed its SVG accessibility and single-file self-check.
+
 ### 🗺️ Extended codebase map
 
 A complete mermaid view of every moving part in the repository — website worker, sync worker, shared services, scripts, and CI:
@@ -234,12 +244,9 @@ The Astro site uses the `@astrojs/cloudflare` adapter to output an SSR-ready bui
 # Build the Astro site
 npm run build
 
-# Deploy the website Worker using the root configuration
-npx wrangler deploy --config wrangler.json
+# Deploy the website Worker with production routes preserved
+npm run deploy
 
-
-# Deploy the website completely 
-npx wrangler deploy
 
 ```
 
@@ -247,7 +254,7 @@ npx wrangler deploy
 
 ### First-party analytics (Cloudflare D1)
 
-The website analytics schema is kept in [`migrations/0001_analytics.sql`](./migrations/0001_analytics.sql). D1 setup requires Wrangler authentication and a real database ID from the account that will deploy the website. The root [`wrangler.json`](./wrangler.json) contains the website's `ANALYTICS_DB` binding, database ID, and migrations directory. Run these commands locally when provisioning or updating the database; the migration command is intentionally not run as part of the build:
+The website analytics schema is kept in [`migrations/0001_analytics.sql`](./migrations/0001_analytics.sql). D1 setup requires Wrangler authentication and a real database ID from the account that will deploy the website. The root [`wrangler.json`](./wrangler.json) contains the website's `freemoviesuggestion_analytics` binding, database ID, and migrations directory. Run these commands locally when provisioning or updating the database; the migration command is intentionally not run as part of the build:
 
 ```sh
 # Authenticate Wrangler if this machine is not already authenticated
@@ -266,7 +273,7 @@ Add the returned `database_id` to the production site configuration in `wrangler
 {
   "d1_databases": [
     {
-      "binding": "ANALYTICS_DB",
+      "binding": "freemoviesuggestion_analytics",
       "database_name": "freemoviesuggestion-analytics",
       "database_id": "<paste-the-database-id-returned-by-wrangler>",
       "migrations_dir": "migrations"
@@ -278,6 +285,8 @@ Add the returned `database_id` to the production site configuration in `wrangler
 The analytics binding belongs to the website Worker; do not add it to `workers/wrangler.toml`, which configures the separate movie-sync Worker. Raw page-view events are intended to be retained for 90 days and should be cleaned up by the analytics cleanup path.
 
 The protected dashboard is available at `/admin/analytics`. Set `ANALYTICS_ADMIN_SECRET` in the website Worker environment. Enter the secret in the dashboard form; it is sent only in the `x-analytics-admin-secret` request header and is never placed in the URL or rendered into page HTML. The summary API returns aggregates only and responds with an unavailable state when D1 is not configured, so movie pages remain useful without analytics.
+
+The homepage live count can optionally prefer GA4 Realtime `activeUsers`. Configure `GA4_PROPERTY_ID`, `GA4_CLIENT_EMAIL`, and `GA4_PRIVATE_KEY` as Worker secrets after enabling the Google Analytics Data API and granting the service account Viewer access to the GA4 property. The browser never receives these credentials or raw Google responses. If GA4 is not configured or unavailable, the endpoint falls back to the D1 five-minute session count.
 
 Raw page-view rows are retained for 90 days. Cleanup is currently manual and best-effort: send an authenticated `POST /api/analytics/cleanup` request with the same header. It removes at most 1,000 expired page views and 1,000 sessions older than 180 days per request, while preserving visitor aggregates used for total visitors. It will remain manual until a real D1 binding and a scheduled Worker trigger are configured; no remote cron is wired here.
 

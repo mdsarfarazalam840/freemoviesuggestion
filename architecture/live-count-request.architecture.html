@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Now Presence Architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--paper:#fafafa;--paper2:#f5f5f5;--ink:#171717;--muted:#4d4d4d;--soft:#888;--rule:rgba(23,23,23,.12);--accent:#7928ca;--accentTint:rgba(121,40,202,.08);--link:#0070f3;--sans:'Geist',system-ui,sans-serif;--serif:'Instrument Serif','Noto Serif',serif;--mono:'Geist Mono',ui-monospace,monospace}
+    body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;display:flex;justify-content:center;padding:44px 24px}
+    .frame{width:100%;max-width:1200px}.eyebrow{font:500 8px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}h1{font:400 clamp(28px,3vw,38px) var(--serif);letter-spacing:-.02em;margin-bottom:28px}.diagram-container{width:100%;overflow-x:auto}svg{display:block;width:100%;min-width:1000px;background:var(--paper)}
+    .zone{fill:rgba(23,23,23,.025);stroke:var(--rule);stroke-width:1}.zone-label{font:500 8px var(--mono);letter-spacing:.14em;fill:var(--soft)}.edge{fill:none;stroke:var(--muted);stroke-width:1.2}.edge-link{fill:none;stroke:var(--link);stroke-width:1.2}.edge-dash{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:4 3}.edge-accent{fill:none;stroke:var(--accent);stroke-width:1.4}.edge-label{font:400 8px var(--mono);letter-spacing:.04em;fill:var(--muted)}.label-mask{fill:var(--paper)}
+    .node{rx:6;stroke-width:1}.backend{fill:#fff;stroke:var(--ink)}.store{fill:rgba(23,23,23,.05);stroke:var(--muted)}.external{fill:rgba(23,23,23,.03);stroke:rgba(23,23,23,.3)}.security{fill:var(--accentTint);stroke:rgba(121,40,202,.5);stroke-dasharray:4 4}.focal{fill:var(--accentTint);stroke:var(--accent);stroke-width:1.2}.tag{font:500 7px var(--mono);letter-spacing:.14em;fill:var(--soft)}.name{font:600 12px var(--sans);fill:var(--ink)}.sub{font:400 9px var(--mono);fill:var(--muted)}.legend-text{font:400 8px var(--mono);fill:var(--muted)}.legend-line{stroke:var(--rule-solid,#a1a1a1);stroke-width:1}
+    @media print{body{padding:0}.diagram-container{overflow:visible}svg{min-width:0}}
+  </style>
+</head>
+<body>
+  <main class="frame">
+    <p class="eyebrow">Architecture · Diagram Design</p>
+    <h1>D1-first presence, GA4 fallback</h1>
+    <div class="diagram-container">
+      <svg viewBox="0 0 1000 700" role="img" aria-labelledby="live-count-title live-count-desc" xmlns="http://www.w3.org/2000/svg">
+        <title id="live-count-title">Live Now Presence Architecture</title>
+        <desc id="live-count-desc">Visible browsers heartbeat every 15 seconds to a first-party tracking API; Cloudflare D1 supplies the live visitor count and Google Analytics is used only as a fallback.</desc>
+        <defs>
+          <marker id="live-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#4d4d4d"/></marker>
+          <marker id="live-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#0070f3"/></marker>
+          <marker id="live-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#7928ca"/></marker>
+        </defs>
+        <rect width="100%" height="100%" fill="#fafafa"/>
+
+        <rect class="zone" x="24" y="112" width="952" height="236" rx="8"/>
+        <rect class="zone" x="24" y="382" width="952" height="186" rx="8"/>
+        <rect class="label-mask" x="40" y="116" width="120" height="14" rx="2"/><text class="zone-label" x="48" y="126">PUBLIC REQUEST PATH</text>
+        <rect class="label-mask" x="40" y="386" width="132" height="14" rx="2"/><text class="zone-label" x="48" y="396">PRIVATE ANALYTICS PATH</text>
+
+        <!-- Arrows first: all routes are orthogonal or straight. -->
+        <path class="edge-link" d="M184 218 H260" marker-end="url(#live-arrow-link)"/>
+        <rect class="label-mask" x="204" y="206" width="44" height="14" rx="2"/><text class="edge-label" x="226" y="216" text-anchor="middle">GET COUNT</text>
+        <path class="edge-accent" d="M430 196 H520" marker-end="url(#live-arrow-accent)"/>
+        <rect class="label-mask" x="448" y="184" width="55" height="14" rx="2"/><text class="edge-label" x="475" y="194" text-anchor="middle">ACTIVEUSERS</text>
+        <path class="edge-dash" d="M345 252 V300 H610 V278" marker-end="url(#live-arrow)"/>
+        <rect class="label-mask" x="448" y="288" width="60" height="14" rx="2"/><text class="edge-label" x="478" y="298" text-anchor="middle">D1 PRIMARY</text>
+        <path class="edge" d="M345 348 V440 H520" marker-end="url(#live-arrow)"/>
+        <rect class="label-mask" x="354" y="388" width="70" height="14" rx="2"/><text class="edge-label" x="389" y="398" text-anchor="middle">BATCH WRITE</text>
+        <path class="edge-link" d="M184 486 H260" marker-end="url(#live-arrow-link)"/>
+        <rect class="label-mask" x="205" y="474" width="43" height="14" rx="2"/><text class="edge-label" x="226" y="484" text-anchor="middle">POST EVENT</text>
+        <path class="edge-dash" d="M700 486 H820" marker-end="url(#live-arrow)"/>
+        <rect class="label-mask" x="730" y="474" width="70" height="14" rx="2"/><text class="edge-label" x="765" y="484" text-anchor="middle">AGGREGATE READ</text>
+        <path class="edge-dash" d="M610 278 V326 H820 V440" marker-end="url(#live-arrow)"/>
+        <rect class="label-mask" x="732" y="314" width="56" height="14" rx="2"/><text class="edge-label" x="760" y="324" text-anchor="middle">NO RAW DATA</text>
+
+        <!-- Nodes -->
+        <g><rect class="node external" x="44" y="190" width="140" height="58"/><text class="tag" x="58" y="207">INPUT</text><text class="name" x="58" y="224">Visitor browser</text><text class="sub" x="58" y="240">homepage.js</text></g>
+        <g><rect class="node focal" x="260" y="176" width="170" height="72"/><text class="tag" x="276" y="194">FOCAL API</text><text class="name" x="276" y="214">Astro live API</text><text class="sub" x="276" y="231">GET /api/analytics/live</text></g>
+        <g><rect class="node external" x="520" y="148" width="180" height="58"/><text class="tag" x="536" y="165">SECONDARY FALLBACK</text><text class="name" x="536" y="182">Google Analytics 4</text><text class="sub" x="536" y="198">only if D1 fails</text></g>
+        <g><rect class="node focal" x="520" y="250" width="180" height="58"/><text class="tag" x="536" y="267">PRIMARY PRESENCE</text><text class="name" x="536" y="284">Cloudflare D1</text><text class="sub" x="536" y="300">visitor_id · last 45 sec</text></g>
+        <g><rect class="node backend" x="260" y="440" width="170" height="72"/><text class="tag" x="276" y="458">FIRST-PARTY API</text><text class="name" x="276" y="478">Tracking endpoint</text><text class="sub" x="276" y="495">POST /api/analytics/track</text></g>
+        <g><rect class="node store" x="520" y="440" width="180" height="58"/><text class="tag" x="536" y="457">DURABLE STORE</text><text class="name" x="536" y="474">Sessions + page views</text><text class="sub" x="536" y="490">anonymous identifiers</text></g>
+        <g><rect class="node backend" x="820" y="440" width="140" height="58"/><text class="tag" x="836" y="457">PRIVATE</text><text class="name" x="836" y="474">Admin dashboard</text><text class="sub" x="836" y="490">aggregate queries</text></g>
+
+        <line class="legend-line" x1="44" y1="620" x2="956" y2="620"/>
+        <text class="legend-text" x="44" y="646">SOLID = primary presence path</text>
+        <text class="legend-text" x="260" y="646">DASHED = fallback / private read</text>
+        <text class="legend-text" x="520" y="646" fill="#0070f3">BLUE = browser/API boundary</text>
+        <text class="legend-text" x="780" y="646" fill="#7928ca">VIOLET = integration point</text>
+      </svg>
+    </div>
+  </main>
+</body>
+</html>

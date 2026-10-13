@@ -15,7 +15,7 @@ const {
 } = await import('../src/lib/analytics');
 const { handleTrackRequest, resetTrackRateLimits, INGEST_WINDOW_MAX_REQUESTS, VISITOR_WINDOW_MAX_EVENTS } = await import('../src/pages/api/analytics/track');
 const { GET: summaryGET, handleSummaryRequest } = await import('../src/pages/api/analytics/summary');
-const { handleLiveRequest } = await import('../src/pages/api/analytics/live');
+const { handleLiveRequest, LIVE_PRESENCE_WINDOW_MS } = await import('../src/pages/api/analytics/live');
 const { POST: cleanupPOST, handleCleanupRequest } = await import('../src/pages/api/analytics/cleanup');
 const { POST: trackPOST } = await import('../src/pages/api/analytics/track');
 
@@ -228,19 +228,62 @@ test('protects summary, returns bounded aggregate metrics, and classifies social
 });
 
 test('serves the public live count without authentication or raw identifiers', async () => {
-  const db = fakeD1([{ match: 'COUNT(DISTINCT session_id)', rows: [{ count: 4 }] }]);
+  const db = fakeD1([{ match: 'COUNT(DISTINCT visitor_id)', rows: [{ count: 4 }] }]);
   const response = await handleLiveRequest(new Request('https://example.test/api/analytics/live'), { freemoviesuggestion_analytics: db });
   assert.equal(response.status, 200);
   const payload = await response.json() as any;
   assert.equal(payload.available, true);
   assert.equal(payload.liveVisitors, 4);
   assert.equal(typeof payload.generatedAt, 'number');
-  assert.deepEqual(Object.keys(payload).sort(), ['available', 'generatedAt', 'liveVisitors']);
+  assert.deepEqual(Object.keys(payload).sort(), ['available', 'generatedAt', 'liveVisitors', 'source']);
+  assert.equal(payload.source, 'd1');
   const body = JSON.stringify(payload);
   assert.equal(body.includes('session_id'), false);
   assert.equal(body.includes('visitor_id'), false);
-  assert.match(db.sqls[0], /COUNT\(DISTINCT session_id\)/);
+  assert.match(db.sqls[0], /COUNT\(DISTINCT visitor_id\)/);
   assert.match(db.sqls[0], /last_seen_at >= \?/);
+});
+
+test('uses a short first-party presence window for the live count', async () => {
+  const binds: unknown[][] = [];
+  const db = {
+    prepare(sql: string) {
+      const statement = {
+        bind(...args: unknown[]) { binds.push(args); return statement; },
+        async all<T>() { return { results: [{ count: 1 }] as T[] }; },
+      };
+      assert.match(sql, /last_seen_at >= \?/);
+      return statement;
+    },
+  };
+  const before = Date.now();
+  await handleLiveRequest(new Request('https://example.test/api/analytics/live'), { freemoviesuggestion_analytics: db });
+  const after = Date.now();
+  assert.equal(LIVE_PRESENCE_WINDOW_MS, 45_000);
+  assert.ok(Number(binds[0][0]) >= before - LIVE_PRESENCE_WINDOW_MS);
+  assert.ok(Number(binds[0][0]) <= after - LIVE_PRESENCE_WINDOW_MS);
+});
+
+test('prefers the D1 presence count even when GA4 is configured', async () => {
+  const db = fakeD1([{ match: 'COUNT(DISTINCT visitor_id)', rows: [{ count: 4 }] }]);
+  const response = await handleLiveRequest(new Request('https://example.test/api/analytics/live'), {
+    freemoviesuggestion_analytics: db,
+    ga4: { async getActiveUsers() { return 189; } },
+  });
+  const payload = await response.json() as any;
+  assert.equal(response.status, 200);
+  assert.equal(payload.liveVisitors, 4);
+  assert.equal(payload.source, 'd1');
+});
+
+test('falls back to GA4 when D1 is unavailable', async () => {
+  const response = await handleLiveRequest(new Request('https://example.test/api/analytics/live'), {
+    ga4: { async getActiveUsers() { return 189; } },
+  });
+  const payload = await response.json() as any;
+  assert.equal(response.status, 200);
+  assert.equal(payload.liveVisitors, 189);
+  assert.equal(payload.source, 'google-analytics');
 });
 
 test('returns unavailable for missing or failing live-count D1', async () => {
@@ -260,6 +303,8 @@ test('keeps the homepage live widget non-blocking and refreshes only while visib
   assert.match(source, /document\.visibilityState === 'visible'/);
   assert.match(source, /liveWidget\.hidden = true/);
   assert.match(source, /Number\.isFinite\(data\.liveVisitors\)/);
+  assert.match(source, /people live now/);
+  assert.match(source, /const LIVE_REFRESH_MS = 15_000/);
   assert.match(source, /finally \{/);
   assert.match(source, /scheduleLiveRefresh\(\);/);
   assert.match(source, /handleLiveVisibilityChange/);
