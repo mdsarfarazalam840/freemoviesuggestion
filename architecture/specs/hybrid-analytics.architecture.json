@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Free Movie Suggestion Hybrid Analytics",
+    "output": "architecture/hybrid-analytics.architecture.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "views": [
+      {
+        "id": "public-count",
+        "label": "Public live count",
+        "focus": ["browser", "live-api", "ga4", "d1"],
+        "note": "The homepage receives one aggregate count through the existing live endpoint."
+      },
+      {
+        "id": "first-party-analytics",
+        "label": "First-party analytics",
+        "focus": ["browser", "track-api", "d1"],
+        "note": "Anonymous page views and sessions continue to be written to D1 for the private dashboard."
+      },
+      {
+        "id": "trust-boundary",
+        "label": "Secrets stay server-side",
+        "focus": ["live-api", "ga4", "secrets"],
+        "note": "The browser never receives Google credentials or raw reporting payloads."
+      }
+    ]
+  },
+  "components": [
+    { "id": "browser", "type": "external", "label": "Visitor browser", "sublabel": "Homepage + tracking", "pos": [40, 280], "size": [150, 68], "tag": "PUBLIC" },
+    { "id": "live-api", "type": "backend", "label": "Astro live API", "sublabel": "GET /api/analytics/live", "pos": [260, 180], "size": [170, 72], "tag": "AGGREGATE" },
+    { "id": "track-api", "type": "backend", "label": "Astro tracking API", "sublabel": "POST /api/analytics/track", "pos": [260, 390], "size": [170, 72], "tag": "FIRST-PARTY" },
+    { "id": "ga4", "type": "external", "label": "Google Analytics 4", "sublabel": "runRealtimeReport", "pos": [520, 100], "size": [180, 72], "tag": "ACTIVE USERS" },
+    { "id": "d1", "type": "database", "label": "Cloudflare D1", "sublabel": "sessions + page views", "pos": [520, 390], "size": [180, 72], "tag": "5 MIN FALLBACK" },
+    { "id": "secrets", "type": "security", "label": "Worker secrets", "sublabel": "property ID + service key", "pos": [520, 220], "size": [180, 72], "tag": "SERVER ONLY" },
+    { "id": "dashboard", "type": "backend", "label": "Private analytics dashboard", "sublabel": "GET /admin/analytics", "pos": [780, 390], "size": [190, 72], "tag": "ADMIN" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Cloudflare Worker runtime", "wraps": ["live-api", "track-api", "d1", "secrets", "dashboard"] },
+    { "kind": "security-group", "label": "Credential boundary", "wraps": ["live-api", "secrets"] }
+  ],
+  "connections": [
+    { "id": "browser-live", "from": "browser", "to": "live-api", "label": "GET count", "variant": "emphasis" },
+    { "id": "browser-track", "from": "browser", "to": "track-api", "label": "POST events", "variant": "dashed", "fromSide": "right", "toSide": "left" },
+    { "id": "live-ga4", "from": "live-api", "to": "ga4", "label": "activeUsers", "variant": "emphasis" },
+    { "id": "live-secrets", "from": "live-api", "to": "secrets", "label": "sign request", "variant": "security", "labelDy": 34 },
+    { "id": "live-d1", "from": "live-api", "to": "d1", "label": "fallback", "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
+    { "id": "track-d1", "from": "track-api", "to": "d1", "label": "batch write", "variant": "emphasis" },
+    { "id": "dashboard-d1", "from": "dashboard", "to": "d1", "label": "aggregate reads", "variant": "dashed", "fromSide": "left", "toSide": "right" }
+  ],
+  "cards": [
+    { "dot": "violet", "title": "Public metric", "items": ["Homepage exposes only liveVisitors", "GA4 is preferred when configured", "D1 remains a bounded fallback"] },
+    { "dot": "emerald", "title": "First-party store", "items": ["Anonymous IDs only", "Five-minute session window", "Dashboard keeps detailed aggregates private"] },
+    { "dot": "rose", "title": "Security rule", "items": ["Credentials stay in Worker secrets", "No browser-to-Google API call", "No raw Google response is returned"] }
+  ]
+}

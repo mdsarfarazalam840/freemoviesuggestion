@@ -235,12 +235,37 @@ test('serves the public live count without authentication or raw identifiers', a
   assert.equal(payload.available, true);
   assert.equal(payload.liveVisitors, 4);
   assert.equal(typeof payload.generatedAt, 'number');
-  assert.deepEqual(Object.keys(payload).sort(), ['available', 'generatedAt', 'liveVisitors']);
+  assert.deepEqual(Object.keys(payload).sort(), ['available', 'generatedAt', 'liveVisitors', 'source']);
+  assert.equal(payload.source, 'd1');
   const body = JSON.stringify(payload);
   assert.equal(body.includes('session_id'), false);
   assert.equal(body.includes('visitor_id'), false);
   assert.match(db.sqls[0], /COUNT\(DISTINCT session_id\)/);
   assert.match(db.sqls[0], /last_seen_at >= \?/);
+});
+
+test('prefers the GA4 active-user count when the server-side client is configured', async () => {
+  const db = fakeD1([{ match: 'COUNT(DISTINCT session_id)', rows: [{ count: 4 }] }]);
+  const response = await handleLiveRequest(new Request('https://example.test/api/analytics/live'), {
+    freemoviesuggestion_analytics: db,
+    ga4: { async getActiveUsers() { return 189; } },
+  });
+  const payload = await response.json() as any;
+  assert.equal(response.status, 200);
+  assert.equal(payload.liveVisitors, 189);
+  assert.equal(payload.source, 'google-analytics');
+});
+
+test('falls back to D1 when the GA4 active-user count is unavailable', async () => {
+  const db = fakeD1([{ match: 'COUNT(DISTINCT session_id)', rows: [{ count: 4 }] }]);
+  const response = await handleLiveRequest(new Request('https://example.test/api/analytics/live'), {
+    freemoviesuggestion_analytics: db,
+    ga4: { async getActiveUsers() { return null; } },
+  });
+  const payload = await response.json() as any;
+  assert.equal(response.status, 200);
+  assert.equal(payload.liveVisitors, 4);
+  assert.equal(payload.source, 'd1');
 });
 
 test('returns unavailable for missing or failing live-count D1', async () => {
@@ -260,6 +285,7 @@ test('keeps the homepage live widget non-blocking and refreshes only while visib
   assert.match(source, /document\.visibilityState === 'visible'/);
   assert.match(source, /liveWidget\.hidden = true/);
   assert.match(source, /Number\.isFinite\(data\.liveVisitors\)/);
+  assert.match(source, /people live now/);
   assert.match(source, /finally \{/);
   assert.match(source, /scheduleLiveRefresh\(\);/);
   assert.match(source, /handleLiveVisibilityChange/);

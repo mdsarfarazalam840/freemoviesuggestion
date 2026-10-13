@@ -32,7 +32,7 @@ try {
 		/>
 
 		<section id="live-visitors" class="mx-auto mt-8 max-w-7xl px-4 sm:px-6 lg:px-8" hidden aria-live="polite">
-			<p class="text-center text-sm font-semibold text-body"><span aria-hidden="true">●</span> <span id="live-visitors-count"></span> people watching now</p>
+			<p class="text-center text-sm font-semibold text-body"><span aria-hidden="true">●</span> <span id="live-visitors-count"></span> people live now</p>
 		</section>
 		<script>
 			const liveWidget = document.getElementById('live-visitors') as HTMLElement;
@@ -62,7 +62,7 @@ try {
 				try {
 					const response = await fetch('/api/analytics/live', { headers: { accept: 'application/json' }, cache: 'no-store' });
 					if (!response.ok) throw new Error('live count unavailable');
-					const data = await response.json() as { available?: boolean; liveVisitors?: number };
+					const data = await response.json() as { available?: boolean; liveVisitors?: number; source?: string };
 					if (data.available !== true || !Number.isFinite(data.liveVisitors)) throw new Error('live count unavailable');
 					liveCount.textContent = String(data.liveVisitors);
 					liveWidget.hidden = false;
