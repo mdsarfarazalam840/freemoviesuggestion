@@ -78,6 +78,16 @@ graph LR
 - ⚡ **Instant preview (no deploy needed):** [open via htmlpreview](https://htmlpreview.github.io/?https://raw.githubusercontent.com/mdsarfarazalam840/freemoviesuggestion/master/architecture-interactive.html) — renders the file directly from the repository.
 - 💾 **Local:** [`architecture-interactive.html`](./architecture-interactive.html) — clone the repo and open it in your browser.
 
+### 📡 Current live-presence architecture
+
+The homepage's **Live now** counter is first-party and D1-first. A visible browser sends a heartbeat every 15 seconds to `POST /api/analytics/track`; the Worker stores the session activity in Cloudflare D1. `GET /api/analytics/live` counts distinct `visitor_id` values seen within the last 45 seconds, so multiple tabs from one browser count as one visitor. Google Analytics 4 Realtime is retained only as a fallback when D1 is unavailable. The public response exposes only an aggregate count and its source.
+
+- **Archify interactive architecture:** [`architecture/live-presence.architecture.html`](./architecture/live-presence.architecture.html)
+- **Archify specification:** [`architecture/specs/live-presence.architecture.json`](./architecture/specs/live-presence.architecture.json)
+- **Editorial diagram-design view:** [`architecture/live-count-request.architecture.html`](./architecture/live-count-request.architecture.html)
+
+The Archify artifact was validated with the `showcase` profile: 9/9 checks passed, with zero composition errors and zero warnings. The diagram-design artifact passed its SVG accessibility and single-file self-check.
+
 ### 🗺️ Extended codebase map
 
 A complete mermaid view of every moving part in the repository — website worker, sync worker, shared services, scripts, and CI:

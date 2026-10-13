@@ -15,6 +15,7 @@ type LiveEnv = {
 };
 type CountRow = { count: number };
 
+export const LIVE_PRESENCE_WINDOW_MS = 45_000;
 const JSON_HEADERS = { 'content-type': 'application/json', 'cache-control': 'no-store' };
 
 function json(status: number, body: Record<string, unknown>): Response {
@@ -30,6 +31,21 @@ export async function handleLiveRequest(request: Request, env: LiveEnv = {}): Pr
     clientEmail: env.GA4_CLIENT_EMAIL ?? '',
     privateKey: env.GA4_PRIVATE_KEY ?? '',
   };
+  const db = env.freemoviesuggestion_analytics;
+  if (db) {
+    try {
+      const result = await db.prepare(
+        'SELECT COUNT(DISTINCT visitor_id) AS count FROM analytics_sessions WHERE last_seen_at >= ? AND last_seen_at <= ?',
+      ).bind(now - LIVE_PRESENCE_WINDOW_MS, now).all<CountRow>();
+      const row = result.results?.[0];
+      if (row && Number.isFinite(Number(row.count))) {
+        return json(200, { available: true, liveVisitors: Number(row.count), source: 'd1', generatedAt: now });
+      }
+    } catch {
+      // Continue to the GA4 fallback when D1 is unavailable.
+    }
+  }
+
   const ga4Configured = Boolean(ga4Config.propertyId && ga4Config.clientEmail && ga4Config.privateKey);
   if (env.ga4 || ga4Configured) {
     try {
@@ -39,24 +55,12 @@ export async function handleLiveRequest(request: Request, env: LiveEnv = {}): Pr
         return json(200, { available: true, liveVisitors: activeUsers, source: 'google-analytics', generatedAt: now });
       }
     } catch {
-      // Continue to the D1 fallback when an injected or future client fails closed.
+      // Continue to the unavailable response when both sources fail closed.
     }
     console.warn(JSON.stringify({ message: 'ga4_realtime_unavailable' }));
   }
 
-  const db = env.freemoviesuggestion_analytics;
-  if (!db) return json(503, { available: false });
-
-  try {
-    const result = await db.prepare(
-      'SELECT COUNT(DISTINCT session_id) AS count FROM analytics_sessions WHERE last_seen_at >= ? AND last_seen_at <= ?',
-    ).bind(now - 5 * 60 * 1000, now).all<CountRow>();
-    const row = result.results?.[0];
-    if (!row || !Number.isFinite(Number(row.count))) return json(503, { available: false });
-    return json(200, { available: true, liveVisitors: Number(row.count), source: 'd1', generatedAt: now });
-  } catch {
-    return json(503, { available: false });
-  }
+  return json(503, { available: false });
 }
 
 export const GET: APIRoute = async ({ request, locals }) =>
